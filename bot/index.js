@@ -12,7 +12,8 @@
  *   - Auto-Retry & Fallback: resilient against Google AI 503 traffic spikes
  *   - Debouncing: waits for 30s of silence before replying in fast chats
  *   - Instant Bot-Followup: replies immediately if previous msg was from bot!
- *   - Additive Sequential CF Sync: checks Codeforces handles one-by-one with a strict 5s total limit without overwriting older historical solves in the database!
+ *   - Additive Sequential CF Sync: checks Codeforces handles one-by-one with a strict 5s total limit!
+ *   - Proactive 1-Hour Idle Reminder: motivates squad after 1 hr of silence (respects UTC+6 quiet hours 1 AM–5 AM)
  *   - Media processing: Gemini audio transcription and Vision image description
  *   - Persistent 100-message rolling buffer via Upstash Redis
  *   - Mid-flight cancellation to avoid stale replies
@@ -78,7 +79,7 @@ app.get("/", (_req, res) => {
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.8.0",
+    version: "3.9.0",
   });
 });
 
@@ -117,6 +118,13 @@ const lastMessageTimes = new Map();
  * @type {Map<number, boolean>} 
  */
 const wasLastMessageFromBot = new Map();
+
+/** Flag to prevent sending repeated idle motivational reminders while chat stays silent */
+let idlePromptSent = false;
+
+// Initialize startup timestamp so idle timers calibrate accurately upon boot
+lastMessageTimes.set(ALLOWED_CHAT_ID, Math.floor(Date.now() / 1000));
+wasLastMessageFromBot.set(ALLOWED_CHAT_ID, false);
 
 // ─────────────────────────────────────────────
 //  5. Module 3: Persistent Rolling Buffer (100 Capacity)
@@ -573,7 +581,7 @@ async function executeAndReply(chatId) {
 
     // Mark that the last message sent in this chat was by our bot!
     wasLastMessageFromBot.set(chatId, true);
-    // And reset the last message timestamp so silence timers calibrate accurately from bot reply time
+    // Reset the last message timestamp so silence timers calibrate accurately from bot reply time
     lastMessageTimes.set(chatId, Math.floor(Date.now() / 1000));
 
     // Append bot's own response to buffer so it has self-context (strip basic tags for buffer clarity)
@@ -631,6 +639,7 @@ bot.on("message", async (msg) => {
     // Update last message time & mark that the newest message in chat is now from a regular user
     lastMessageTimes.set(chatId, messageTimestamp);
     wasLastMessageFromBot.set(chatId, false);
+    idlePromptSent = false; // Reset idle reminder flag since a user posted in the group!
 
     if (lastFromBot) {
       // If the message right before this one was sent by our bot, respond immediately without debouncing!
@@ -668,7 +677,83 @@ bot.on("message", async (msg) => {
 });
 
 // ─────────────────────────────────────────────
-//  9. Graceful Shutdown
+//  9. Module 6: 1-Hour Proactive Idle Check-in (Quiet Hours 1 AM - 5 AM UTC+6)
+// ─────────────────────────────────────────────
+const IDLE_THRESHOLD_SEC = 3600; // 1 hour in seconds
+
+/**
+ * Accurately check if the current time in Bangladesh (UTC+6) is between 1:00 AM and 5:59 AM.
+ * Calculated directly from UTC milliseconds so it works on any cloud hosting timezone.
+ */
+function isQuietHoursUTC6() {
+  const now = new Date();
+  // Shift UTC time forward by 6 hours (6 * 3600 * 1000 ms) to get UTC+6 time representation
+  const utc6Date = new Date(now.getTime() + (6 * 3600 * 1000));
+  const hourUTC6 = utc6Date.getUTCHours();
+  // Check if current hour is 1, 2, 3, 4, or 5 (1:00 AM to 5:59 AM)
+  return hourUTC6 >= 1 && hourUTC6 <= 5;
+}
+
+/**
+ * Send a proactive motivational check-in to wake up a silent group chat.
+ */
+async function triggerIdleMotivationalPrompt(chatId) {
+  try {
+    const buffer = await getBuffer(chatId);
+    const transcript = buffer.slice(-15).join("\n") || "No recent messages.";
+
+    console.log("📊 Fetching live solve summary for proactive reminder...");
+    const solvesSummary = await fetchLatestSolvesSummary();
+
+    try { await bot.sendChatAction(chatId, "typing"); } catch { }
+
+    const promptText = `The group chat has been completely silent for over an hour! Here is the recent conversation transcript:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nWrite a friendly, energetic, and completely diverse proactive check-in message to wake the squad up! Ask how problem solving is going, check in on today's assignments, drop a spontaneous motivating thought, or playfully prod someone to share their progress ("Are you solving guys?", etc.). Remember: DO NOT sound monotonic or formulaic! NEVER use repetitive stock phrases. Keep it short (2-4 sentences max), use emojis and line breaks, and match the chaotic supportive friend-group vibe!`;
+
+    const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
+    if (!reply) return;
+
+    try {
+      await bot.sendMessage(chatId, reply, { parse_mode: "HTML" });
+    } catch {
+      await bot.sendMessage(chatId, reply);
+    }
+    console.log(`💬 Gemini Bot sent proactive idle reminder in chat ${chatId}`);
+
+    wasLastMessageFromBot.set(chatId, true);
+    lastMessageTimes.set(chatId, Math.floor(Date.now() / 1000));
+    const cleanReply = reply.replace(/<[^>]*>?/gm, "");
+    await appendToBuffer(chatId, `SUST CP Bot: ${cleanReply}`);
+  } catch (err) {
+    console.error("❌ Proactive idle reminder execution error:", err.message);
+  }
+}
+
+// Check every 1 minute if the group chat has been silent for 1 hour
+setInterval(async () => {
+  try {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const prevTime = lastMessageTimes.get(ALLOWED_CHAT_ID) || nowSec;
+    const silentDuration = nowSec - prevTime;
+    const lastFromBot = wasLastMessageFromBot.get(ALLOWED_CHAT_ID) || false;
+
+    // Trigger ONLY if quiet >= 1 hr, last message wasn't already from bot, and we haven't already reminded during this quiet spell
+    if (silentDuration >= IDLE_THRESHOLD_SEC && !lastFromBot && !idlePromptSent) {
+      if (isQuietHoursUTC6()) {
+        console.log("🌙 Group quiet for >1 hour, but currently within UTC+6 quiet hours (1:00 AM - 5:59 AM). Suppressing idle motivational check-in.");
+        return;
+      }
+
+      console.log(`⏰ Group silent for ${silentDuration}s (>= 1 hour). Triggering proactive motivational reminder!`);
+      idlePromptSent = true;
+      await triggerIdleMotivationalPrompt(ALLOWED_CHAT_ID);
+    }
+  } catch (err) {
+    console.error("❌ Idle monitor check failed:", err.message);
+  }
+}, 60_000);
+
+// ─────────────────────────────────────────────
+//  10. Graceful Shutdown
 // ─────────────────────────────────────────────
 
 async function shutdown(signal) {
