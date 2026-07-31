@@ -794,9 +794,8 @@ Message: "${text}"
 Task: Determine if this message deserves a Telegram emoji reaction based on these strict rules:
 1. If they solved a hard problem, achieved a goal, or shared a great idea -> output exactly 🔥, ❤️, 🤩, 🎉, 👏, 💯, 🤝, or 🫡
 2. If they are sad, frustrated, or had a rating drop -> output exactly 😢, 💔, 😭, or 😨
-3. If the message is genuinely funny or a good joke -> output exactly 🤣, 😂, 😁, 🤪, or 🤡
-4. If it's a wholesome, positive, or happy message (good vibes but not necessarily an achievement) -> output exactly 🥰, 😇, 😎, or 😍
-5. If it's just regular conversation, casual talk, or neutral questions -> output exactly BLANK
+3. If it's a wholesome, positive, or happy message (good vibes but not necessarily an achievement) -> output exactly 🥰, 😇, 😎, or 😍
+4. If it's just regular conversation, casual talk, or neutral questions -> output exactly BLANK
 
 Output ONLY ONE EMOJI or the word BLANK. Do not output anything else.`;
 
