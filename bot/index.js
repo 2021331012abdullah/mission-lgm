@@ -10,7 +10,7 @@
  *
  *  Features:
  *   - Auto-Retry & Fallback: resilient against Google AI 503 traffic spikes
- *   - Debouncing: waits for 30s of silence before replying in fast chats
+ *   - Debouncing: waits for 2 minutes (120s) of silence before replying in fast chats
  *   - Instant Bot-Followup: replies immediately if previous msg was from bot!
  *   - Additive Sequential CF Sync: checks Codeforces handles one-by-one with a strict 5s total limit!
  *   - Proactive 1-Hour Idle Reminder: motivates squad after 1 hr of silence (respects UTC+6 quiet hours 1 AM–5 AM)
@@ -57,8 +57,8 @@ if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
 if (!REDIS_URL) throw new Error("Missing REDIS_URL");
 
 const ALLOWED_CHAT_ID = Number(ALLOWED_GROUP_ID);
-const DEBOUNCE_MS = 30_000; // 30 seconds
-const DEBOUNCE_SEC_THRESHOLD = 30; // 30 seconds
+const DEBOUNCE_MS = 120_000; // 2 minutes (120 seconds)
+const DEBOUNCE_SEC_THRESHOLD = 120; // 2 minutes (120 seconds)
 const MAX_BUFFER = 100; // Expanded to 100 messages
 const REDIS_KEY_PREFIX = "lgm_bot:chat:";
 const SUPABASE_DB_ID = "main_tracker";
@@ -82,7 +82,7 @@ app.get("/", (_req, res) => {
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.23.0",
+    version: "3.24.0 (2-Minute Debounce Delay)",
   });
 });
 
@@ -101,7 +101,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 redis.on("connect", () => console.log("🗄️  Upstash Redis connected (100 msg capacity)"));
 redis.on("error", (err) => console.error("🗄️  Redis error:", err.message));
 
-console.log("🤖 Telegram bot started in polling mode");
+console.log("🤖 Telegram bot started in polling mode (Debounce Delay: 2 minutes)");
 console.log("⚡ Powered by Google Gemini 3.5 Flash (with High Diversity & 503 Auto-Retry)");
 console.log("📡 Connected to Supabase Tracker & Additive Sequential Codeforces API Sync (5s limit)");
 console.log(`🔒 Locked to chat ID: ${ALLOWED_CHAT_ID}`);
@@ -628,7 +628,7 @@ async function executeAndReply(chatId) {
 }
 
 // ─────────────────────────────────────────────
-//  8. Module 2 + 4: Message Ingestion & Debouncer
+//  8. Module 2 + 4: Message Ingestion & Debouncer (2-Minute Delay)
 // ─────────────────────────────────────────────
 
 bot.on("message", async (msg) => {
@@ -682,7 +682,7 @@ bot.on("message", async (msg) => {
       console.log(`⚡ Immediate reply triggered (user replied directly after bot message!)`);
       executeAndReply(chatId);
     } else if (timeDiff < DEBOUNCE_SEC_THRESHOLD) {
-      // Chat is chaotic / fast (messages within 30s) — debounce for 30s
+      // Chat is chaotic / fast (messages within 2 minutes) — debounce for 2 minutes (120s)
       if (chatTimers.has(chatId)) {
         clearTimeout(chatTimers.get(chatId));
       }
@@ -692,15 +692,15 @@ bot.on("message", async (msg) => {
       }, DEBOUNCE_MS);
 
       chatTimers.set(chatId, timeout);
-      console.log(`⏳ Debounce timer reset (${timeDiff}s since last msg, waiting 30s)`);
+      console.log(`⏳ Debounce timer reset (${timeDiff}s since last msg, waiting 2 minutes (120s))`);
     } else {
-      // Chat was quiet for >= 30s — reply immediately
+      // Chat was quiet for >= 2 minutes — reply immediately
       if (chatTimers.has(chatId)) {
         clearTimeout(chatTimers.get(chatId));
         chatTimers.delete(chatId);
       }
 
-      console.log(`⚡ Immediate reply triggered (${timeDiff}s silence)`);
+      console.log(`⚡ Immediate reply triggered (${timeDiff}s silence >= 2 minutes)`);
       executeAndReply(chatId);
     }
   } catch (err) {
