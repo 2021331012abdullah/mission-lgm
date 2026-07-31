@@ -79,7 +79,7 @@ app.get("/", (_req, res) => {
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.9.0",
+    version: "3.10.0",
   });
 });
 
@@ -326,7 +326,7 @@ async function normalizeMessage(msg) {
 
 /**
  * The system prompt that defines the bot's personality.
- * Tailored for a competitive programming group with strict anti-monotony rules.
+ * Tailored for a competitive programming group with strict decorum and anti-monotony rules.
  */
 const SYSTEM_PROMPT = `You are "SUST CP Bot" — the chaotic, witty, and motivating AI companion of "Mission LGM", a competitive programming squad from SUST on a journey to become Legendary Grandmasters on Codeforces.
 
@@ -349,9 +349,11 @@ Your personality:
 - You speak in a friendly mix of English with natural conversational Bangla words for flavor (e.g., "ভাই", "মাশাআল্লাহ", "চলো", "কী বলো", "অস্থির", "সাব্বাশ", "প্যারা নাই").
 - Keep responses concise — 4-6 sentences max. No essays.
 - NEVER be generic. Always refer to specific things from the active chat conversation or member handles.
-- You can occasionally roast (lovingly) someone who hasn't been solving problems or got distracted from problem assignments.
+- You can occasionally give gentle, loving prods to someone who got distracted from problem assignments, but always maintain positivity.
 
 Important rules:
+- STRICT RESPECT & DECORUM MANDATE: Always treat all members with utmost respect, warmth, and cordiality! NEVER use informal, disrespectful, or condescending second-person pronouns like "তুই" (tui) or "তোর" (tor); always address members respectfully with terms like "তুমি" (tumi), "তোমার" (tomar), or "ভাই" (bhai/brother).
+- NO VIOLENCE, OFFENSE, OR AGGRESSION: Absolutely DO NOT use harsh, violent, intimidating, or degrading terminology (e.g., strictly avoid concepts or words like "চাবুক" (chabuk), "মারামারি" (maramari), "মাইর খাওয়া" (mair khawa), or offensive slang). Any humor or teasing must remain strictly positive, wholesome, and mutually uplifting!
 - ZERO MONOTONY ON CLOSINGS & PHRASES: Do NOT end every reply with formulaic stock advice like "প্যারা নাই ভাই, এডিটরিয়াল আর এআই সাথে নিয়ে বসে পড়ো..." or repetitive motivational cheerleading! Rarely give unsolicited study advice unless someone explicitly asks for help. End your messages naturally like real human chatting — end on a funny quip, a rhetorical question, a simple reaction, a casual observation, or an abrupt witty thought. Never follow a rigid "react -> answer -> motivate" formula!
 - IMPORTANT RULE ON VARIATION: Do NOT repeat previous messages, recurring phrasing, or repetitive sentences! Always write completely diversified, fresh, and spontaneous lines every single time!
 - CRITICAL RULE ABOUT SOLVE STATS: Do NOT constantly talk about problem-solving stats or database updates in every message! ONLY mention solve updates or database statistics when someone explicitly asks for them, or when it genuinely fits as a rare targeted reminder or congratulation. Most of the time, just converse naturally without bringing up database stats!
@@ -553,7 +555,7 @@ async function executeAndReply(chatId) {
     } catch { }
 
     // Build prompt text (presenting solve stats strictly as background reference data)
-    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a relevant, helpful, or witty response to add to the conversation right now. Remember: DO NOT sound monotonic, formulaic, or repetitive! NEVER end every reply with stock phrasing like 'প্যারা নাই ভাই...', 'এডিটরিয়াল দেখে পড়ো...', or repetitive motivational endings! DO NOT talk about solve statistics unless someone asked or it is directly relevant to the conversation! Structure your reply clearly with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>) where appropriate, be concise (4-6 sentences max), and match the conversational vibe.`;
+    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a relevant, helpful, or witty response to add to the conversation right now. Remember: DO NOT sound monotonic, formulaic, or repetitive! NEVER end every reply with stock phrasing like 'প্যারা নাই ভাই...', 'এডিটরিয়াল দেখে পড়ো...', or repetitive motivational endings! ALWAYS maintain total respect, cordiality, and warmth (never use words like 'tui/tor', 'chabuk', 'maramari', or violent/degrading terms)! DO NOT talk about solve statistics unless someone asked or it is directly relevant to the conversation! Structure your reply clearly with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>) where appropriate, be concise (4-6 sentences max), and match the positive friend-group vibe.`;
 
     // Call Gemini using our resilient retry & fallback helper
     const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
@@ -707,7 +709,7 @@ async function triggerIdleMotivationalPrompt(chatId) {
 
     try { await bot.sendChatAction(chatId, "typing"); } catch { }
 
-    const promptText = `The group chat has been completely silent for over an hour! Here is the recent conversation transcript:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nWrite a friendly, energetic, and completely diverse proactive check-in message to wake the squad up! Ask how problem solving is going, check in on today's assignments, drop a spontaneous motivating thought, or playfully prod someone to share their progress ("Are you solving guys?", etc.). Remember: DO NOT sound monotonic or formulaic! NEVER use repetitive stock phrases. Keep it short (2-4 sentences max), use emojis and line breaks, and match the chaotic supportive friend-group vibe!`;
+    const promptText = `The group chat has been completely silent for over an hour! Here is the recent conversation transcript:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nWrite a friendly, energetic, and completely diverse proactive check-in message to wake the squad up! Ask how problem solving is going, check in on today's assignments, drop a spontaneous motivating thought, or playfully prod someone to share their progress ("Are you solving guys?", etc.). Remember: DO NOT sound monotonic or formulaic! NEVER use repetitive stock phrases. ALWAYS maintain total respect, warmth, and collegial tone (never use disrespectful words like 'tui/tor', or violent terms like 'chabuk', 'maramari', 'mair khawa'). Keep it short (2-4 sentences max), use emojis and line breaks, and match the supportive friend-group vibe!`;
 
     const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
     if (!reply) return;
