@@ -406,9 +406,14 @@ Your Core Identity & Tone of Voice for Direct Replies:
 - Vary your stylistic approach constantly: sometimes open with a witty observational remark, sometimes directly answer a technical point with crisp brevity, sometimes react with playful camaraderie, and sometimes ask an engaging question!
 - Do NOT end every reply with formulaic stock advice like "প্যারা নাই ভাই, এডিটরিয়াল আর এআই সাথে নিয়ে বসে পড়ুন..." or predictable cheerleading! Always deliver completely fresh, unrepeatable, and vibrant commentary within your strictly randomized ${maxLines}-line limit!
 
-8. CONVERSATIONAL FLOW & SOLVE STATS:
+8. CONVERSATIONAL FLOW, FORMATTING & SOLVE STATS:
 - Do NOT constantly talk about problem-solving stats or database updates in every message! ONLY mention solve updates when asked or when celebrating an immediate new success. Most of the time, just converse warmly without database references.
-- Structure replies clearly with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>), and vary your opening greetings naturally!`;
+- Use clear formatting in ALL replies: use bullet points (•) to list multiple points, bold (<b>text</b>) for emphasis, and <code>code</code> for handles or technical terms. Structure everything with clean line breaks and relevant emojis.
+- SOLVE STATISTICS FORMAT RULE: When someone directly asks about solve stats, standings, or today's progress, format the statistics section FIRST as a clean table or list, one line per member:
+  <b>📊 Today's Solve Count:</b>
+  • <code>Handle</code> — X solved ✅ / ⏳ pending
+  (list all members)
+  Then follow with 2-3 lines of warm, energetic commentary reacting to the numbers (who's leading, who needs to grind more, encouragement etc.).`;
 }
 
 /**
@@ -462,9 +467,14 @@ You are a humble observer and supportive AI companion, NOT an intrusive chatterb
 - ABSOLUTELY DO NOT repeat any of your previous messages, recurring sentences, or familiar wording in a similar style! Before generating your reply, inspect the conversation buffer and intentionally avoid using the exact same sentence structures or repetitive stock phrases you used in recent messages!
 - Switch up your tone, emotional angle, and vocabulary dynamically with every turn! Always deliver completely fresh, unrepeatable, and vibrant commentary within your strictly randomized ${maxLines}-line limit!
 
-8. CONVERSATIONAL FLOW & SOLVE STATS:
+8. CONVERSATIONAL FLOW, FORMATTING & SOLVE STATS:
 - Do NOT constantly talk about problem-solving stats or database updates in every message! ONLY mention solve updates when asked or when celebrating an immediate new success.
-- Structure replies clearly with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>), and vary your opening greetings naturally!`;
+- Use clear formatting in ALL replies: use bullet points (•) to list multiple points, bold (<b>text</b>) for emphasis, and <code>code</code> for handles or technical terms. Structure everything with clean line breaks and relevant emojis.
+- SOLVE STATISTICS FORMAT RULE: When someone directly asks about solve stats, standings, or today's progress, format the statistics section FIRST as a clean table or list, one line per member:
+  <b>📊 Today's Solve Count:</b>
+  • <code>Handle</code> — X solved ✅ / ⏳ pending
+  (list all members)
+  Then follow with 2-3 lines of warm, energetic commentary reacting to the numbers (who's leading, who needs to grind more, encouragement etc.).`;
 }
 
 /**
