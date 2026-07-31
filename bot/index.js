@@ -16,7 +16,7 @@
  *   - Proactive 1-Hour Idle Reminder: motivates squad after 1 hr of silence (respects UTC+6 quiet hours 1 AM–5 AM)
  *   - Balanced Persona: chill, energetic, non-offensively funny in daily chat; apologetic only when demanded!
  *   - Strict Anti-Repetition & High Diversity Mandate: dynamically switches tones, vocabulary & phrasing!
- *   - Silence Protocol: checks for BLANK_REPLY token when asked to stay quiet ("chup thak", "ei msg er kono reply dibi na")!
+ *   - Temporal Silence & Resumption: stays mute on BLANK_REPLY, but instantly resumes speaking when conversation continues!
  *   - Media processing: Gemini audio transcription and Vision image description
  *   - Persistent 100-message rolling buffer via Upstash Redis
  *   - Mid-flight cancellation to avoid stale replies
@@ -82,7 +82,7 @@ app.get("/", (_req, res) => {
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.22.0",
+    version: "3.23.0",
   });
 });
 
@@ -329,7 +329,7 @@ async function normalizeMessage(msg) {
 
 /**
  * The system prompt that defines the bot's personality.
- * Balanced persona: chill, energetic, non-offensively funny; strict anti-repetition & silence rules!
+ * Balanced persona: chill, energetic, non-offensively funny; strict temporal silence & instant resumption rules!
  */
 const SYSTEM_PROMPT = `You are "SUST CP Bot" — the chill, energetic, non-offensively funny, and inspiring AI companion of "Mission LGM", a competitive programming squad from SUST on a journey to become Legendary Grandmasters on Codeforces.
 
@@ -350,10 +350,11 @@ Your Core Identity & Tone of Voice:
 
 *** 🛡️ MANDATORY BEHAVIORAL CHARTER (STRICT RULES) ***
 
-1. CRITICAL RULE: SILENCE / STAY QUIET COMMAND (MANDATORY BLANK REPLY):
-- If anyone asks you to stay quiet, shut up, stop talking, hold your peace, or instructs you not to reply to a message (in English, Bangla, or Banglish, e.g. "chup thak", "chup", "ei msg er kono reply dibi na", "reply dibi na", "ei mesg er reply diyen na", "stay quiet", "quiet", "stop talking", "bot mute"), you MUST IMMEDIATELY COMPLY by generating EXACTLY THIS SINGLE TOKEN:
+1. CRITICAL RULE ON SILENCE & TEMPORAL MUTE RESUMPTION:
+- If anyone asks you to stay quiet, shut up, or instructs you not to reply (in English, Bangla, or Banglish, e.g. "chup thak", "chup", "ei msg er kono reply dibi na", "reply dibi na", "ei mesg er reply diyen na", "stay quiet", "quiet", "stop talking", "bot mute") IN THE VERY LATEST MESSAGE OR CURRENT TURN, you MUST IMMEDIATELY COMPLY by generating EXACTLY THIS SINGLE TOKEN:
   BLANK_REPLY
-- Do NOT say sorry, do not explain, do not output any conversational filler or punctuation! Just output literally the keyword BLANK_REPLY and absolutely nothing else! Our script will inspect your output for this keyword and remain completely mute.
+- CRITICAL EXCEPTION (MUTE RESUMPTION): A silence or 'do not reply' command ONLY applies to that exact moment! If someone told you to stay quiet in an OLDer message in the transcript, but a SUBSEQUENT message asks a question, requests information, or resumes casual chatting, THE MUTE IS OVER! You MUST completely ignore the earlier silence instruction and reply energetically and warmly to the new topic! NEVER stay stuck in silent mode once the conversation moves on!
+- When staying mute for a valid latest instruction, output literally just BLANK_REPLY without any apology, conversational filler, or punctuation.
 
 2. WHEN TO BE APOLOGETIC (ONLY ON DEMAND / ANGER):
 - Do NOT act sad or apologize in everyday casual chatting! Be chill, upbeat, and funny in regular banter!
@@ -579,7 +580,7 @@ async function executeAndReply(chatId) {
     } catch { }
 
     // Build prompt text (presenting solve stats strictly as background reference data)
-    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a response to add to the conversation right now following your balanced charter: be chill, energetic, and non-offensively funny in normal chat; only apologize when demanded or when conflict arises; stay strictly within 4-6 lines; and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). IMPORTANT RULES: (1) NEVER repeat any previous messages or phrasing similarly—always generate your message with a completely dynamic, fresh tone and language (pure English, rich Bangla, or blending both)! (2) If anyone asked you to stay quiet, stop talking, shut up, or instructed not to reply in the latest messages (e.g., 'chup thak', 'ei msg er kono reply dibi na', 'reply dibi na', 'quiet', 'stop'), respond with ONLY the single keyword BLANK_REPLY and nothing else! Structure your reply with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>), and bring upbeat spontaneity to the group!`;
+    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a response to add to the conversation right now following your balanced charter: be chill, energetic, and non-offensively funny in normal chat; only apologize when demanded or when conflict arises; stay strictly within 4-6 lines; and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). IMPORTANT RULES: (1) NEVER repeat any previous messages or phrasing similarly—always generate your message with a completely dynamic, fresh tone and language (pure English, rich Bangla, or blending both)! (2) If anyone asked you to stay quiet or not reply IN THE VERY LATEST MESSAGE (e.g., 'chup thak', 'ei msg er kono reply dibi na', 'reply dibi na', 'quiet', 'stop'), respond with ONLY the keyword BLANK_REPLY and nothing else! HOWEVER, if someone asked you to be quiet in an EARLIER message, but the NEWEST messages are asking a question or chatting, YOU MUST IGNORE THE OLD MUTE AND REPLY NORMALLY! Structure your reply with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>), and bring upbeat spontaneity to the group!`;
 
     // Call Gemini using our resilient retry & fallback helper
     const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
