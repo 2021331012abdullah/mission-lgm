@@ -119,44 +119,40 @@ function Index() {
     let imageFile: File | null = null;
     const el = document.getElementById(`chronicle-table-${date}`);
     if (el) {
-      // Temporarily remove overflow clipping from ALL descendant elements so the full table is captured
-      const overflowEls: { el: HTMLElement; ov: string; ovX: string; maxW: string }[] = [];
-      el.querySelectorAll("*").forEach((child) => {
+      // Deep-clone into offscreen container so the visible UI never flashes
+      const clone = el.cloneNode(true) as HTMLElement;
+      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+
+      clone.style.position = "absolute";
+      clone.style.left = "-9999px";
+      clone.style.top = "0";
+      clone.style.width = `${targetWidth}px`;
+      clone.style.minWidth = `${targetWidth}px`;
+      clone.style.maxWidth = "none";
+      clone.style.overflow = "visible";
+      clone.style.overflowX = "visible";
+      clone.style.zIndex = "-1";
+      clone.style.pointerEvents = "none";
+
+      clone.querySelectorAll("*").forEach((child) => {
         const htmlChild = child as HTMLElement;
         const computed = getComputedStyle(htmlChild);
         if (computed.overflow !== "visible" || computed.overflowX !== "visible") {
-          overflowEls.push({
-            el: htmlChild,
-            ov: htmlChild.style.overflow,
-            ovX: htmlChild.style.overflowX,
-            maxW: htmlChild.style.maxWidth,
-          });
           htmlChild.style.overflow = "visible";
           htmlChild.style.overflowX = "visible";
           htmlChild.style.maxWidth = "none";
         }
       });
-      const origStyles = {
-        overflow: el.style.overflow,
-        overflowX: el.style.overflowX,
-        width: el.style.width,
-        minWidth: el.style.minWidth,
-        maxWidth: el.style.maxWidth,
-      };
-      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
-      el.style.overflow = "visible";
-      el.style.overflowX = "visible";
-      el.style.width = `${targetWidth}px`;
-      el.style.minWidth = `${targetWidth}px`;
-      el.style.maxWidth = "none";
+      clone.querySelectorAll("[data-exclude-from-capture]").forEach((n) => n.remove());
+
+      document.body.appendChild(clone);
 
       try {
-        const blob = await toBlob(el, {
+        const blob = await toBlob(clone, {
           cacheBust: true,
           pixelRatio: 2,
           backgroundColor: "#140E0A",
           width: targetWidth,
-          filter: (node: any) => !(node && typeof node.hasAttribute === "function" && node.hasAttribute("data-exclude-from-capture")),
         });
         if (blob) {
           imageFile = new File([blob], `Mission_LGM_Table_${date}.png`, { type: "image/png" });
@@ -165,17 +161,7 @@ function Index() {
         console.warn("Could not render image for native share, falling back to link sharing:", err);
       }
 
-      // Restore all original styles
-      el.style.overflow = origStyles.overflow;
-      el.style.overflowX = origStyles.overflowX;
-      el.style.width = origStyles.width;
-      el.style.minWidth = origStyles.minWidth;
-      el.style.maxWidth = origStyles.maxWidth;
-      overflowEls.forEach(({ el: child, ov, ovX, maxW }) => {
-        child.style.overflow = ov;
-        child.style.overflowX = ovX;
-        child.style.maxWidth = maxW;
-      });
+      document.body.removeChild(clone);
     }
     // Launch OS native share popup if supported, passing the actual table image photo if allowed!
     if (navigator.share) {

@@ -70,16 +70,9 @@ export function DaySection({
     .sort((a, b) => b.solved - a.solved || a.handle.localeCompare(b.handle))
     .slice(0, 3);
 
-  // Filter to exclude interactive web UI buttons from generated social media photos
-  const excludeButtonsFilter = (node: any) => {
-    if (node && typeof node.hasAttribute === "function" && node.hasAttribute("data-exclude-from-capture")) {
-      return false;
-    }
-    return true;
-  };
-
 
   // Download high-res PNG of the table for immediate social media attachment
+  // Uses an offscreen clone so the visible UI never flashes or resizes
   const handleDownloadImage = async () => {
     if (!tableContainerRef.current) return;
     setDownloadingImg(true);
@@ -87,66 +80,51 @@ export function DaySection({
       await waitForInitialSyncs();
       const el = tableContainerRef.current;
 
-      // Temporarily force all child elements to full desktop width and remove overflow clipping
-      // so html-to-image captures the entire table instead of just the visible mobile viewport
-      const overflowEls: { el: HTMLElement; ov: string; ovX: string; maxW: string; w: string; minW: string }[] = [];
-      el.querySelectorAll("*").forEach((child) => {
+      // Deep-clone the element into an offscreen container
+      const clone = el.cloneNode(true) as HTMLElement;
+      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+
+      // Style the clone: full desktop width, no overflow clipping, positioned offscreen
+      clone.style.position = "absolute";
+      clone.style.left = "-9999px";
+      clone.style.top = "0";
+      clone.style.width = `${targetWidth}px`;
+      clone.style.minWidth = `${targetWidth}px`;
+      clone.style.maxWidth = "none";
+      clone.style.overflow = "visible";
+      clone.style.overflowX = "visible";
+      clone.style.zIndex = "-1";
+      clone.style.pointerEvents = "none";
+
+      // Remove overflow clipping from all descendants in the clone
+      clone.querySelectorAll("*").forEach((child) => {
         const htmlChild = child as HTMLElement;
-        const cs = htmlChild.style;
         const computed = getComputedStyle(htmlChild);
         if (computed.overflow !== "visible" || computed.overflowX !== "visible") {
-          overflowEls.push({
-            el: htmlChild,
-            ov: cs.overflow,
-            ovX: cs.overflowX,
-            maxW: cs.maxWidth,
-            w: cs.width,
-            minW: cs.minWidth,
-          });
           htmlChild.style.overflow = "visible";
           htmlChild.style.overflowX = "visible";
           htmlChild.style.maxWidth = "none";
         }
       });
 
-      // Also override the root captured element itself
-      const origRootStyles = {
-        overflow: el.style.overflow,
-        overflowX: el.style.overflowX,
-        width: el.style.width,
-        minWidth: el.style.minWidth,
-        maxWidth: el.style.maxWidth,
-      };
-      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
-      el.style.overflow = "visible";
-      el.style.overflowX = "visible";
-      el.style.width = `${targetWidth}px`;
-      el.style.minWidth = `${targetWidth}px`;
-      el.style.maxWidth = "none";
+      // Remove data-exclude-from-capture elements from clone (buttons, etc.)
+      clone.querySelectorAll("[data-exclude-from-capture]").forEach((n) => n.remove());
+
+      document.body.appendChild(clone);
 
       const captureOptions = {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#140E0A",
         width: targetWidth,
-        filter: excludeButtonsFilter,
       };
 
-      // CHROME/CHROMIUM WARMUP RENDER
-      try { await toPng(el, { ...captureOptions, pixelRatio: 1 }); } catch {}
-      const dataUrl = await toPng(el, captureOptions);
+      // CHROME/CHROMIUM WARMUP RENDER on the offscreen clone
+      try { await toPng(clone, { ...captureOptions, pixelRatio: 1 }); } catch {}
+      const dataUrl = await toPng(clone, captureOptions);
 
-      // Restore all original overflow styles
-      el.style.overflow = origRootStyles.overflow;
-      el.style.overflowX = origRootStyles.overflowX;
-      el.style.width = origRootStyles.width;
-      el.style.minWidth = origRootStyles.minWidth;
-      el.style.maxWidth = origRootStyles.maxWidth;
-      overflowEls.forEach(({ el: child, ov, ovX, maxW }) => {
-        child.style.overflow = ov;
-        child.style.overflowX = ovX;
-        child.style.maxWidth = maxW;
-      });
+      // Clean up the offscreen clone
+      document.body.removeChild(clone);
 
       const link = document.createElement("a");
       link.download = `Mission_LGM_Chronicle_${day.date}.png`;
