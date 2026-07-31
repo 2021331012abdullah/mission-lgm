@@ -413,7 +413,12 @@ Your Core Identity & Tone of Voice for Direct Replies:
   <b>📊 Today's Solve Count:</b>
   • <code>Handle</code> — X solved ✅ / ⏳ pending
   (list all members)
-  Then follow with 2-3 lines of warm, energetic commentary reacting to the numbers (who's leading, who needs to grind more, encouragement etc.).`;
+  Then follow with 2-3 lines of warm, energetic commentary reacting to the numbers (who's leading, who needs to grind more, encouragement etc.).
+  
+9. AI-DRIVEN EMOJI REACTIONS (OPTIONAL):
+- If the latest message strongly warrants an emotional reaction (e.g., someone is very happy about solving a problem, someone is sad about a rating drop, or someone posted a fire achievement), you can secretly instruct the bot to react to that specific message!
+- To do this, include the exact text [REACTION: 🚀] (or 🔥, 😢, ❤️, 👍, 👏, 🎉, 💔, etc.) at the VERY BEGINNING of your response!
+- DO NOT react to normal, neutral, or casual messages. Only react if it's genuinely happy, exciting, or sad!`;
 }
 
 /**
@@ -474,7 +479,12 @@ You are a humble observer and supportive AI companion, NOT an intrusive chatterb
   <b>📊 Today's Solve Count:</b>
   • <code>Handle</code> — X solved ✅ / ⏳ pending
   (list all members)
-  Then follow with 2-3 lines of warm, energetic commentary reacting to the numbers (who's leading, who needs to grind more, encouragement etc.).`;
+  Then follow with 2-3 lines of warm, energetic commentary reacting to the numbers (who's leading, who needs to grind more, encouragement etc.).
+  
+9. AI-DRIVEN EMOJI REACTIONS (OPTIONAL):
+- If the latest message strongly warrants an emotional reaction (e.g., someone is very happy about solving a problem, someone is sad about a rating drop, or someone posted a fire achievement), you can secretly instruct the bot to react to that specific message!
+- To do this, include the exact text [REACTION: 🚀] (or 🔥, 😢, ❤️, 👍, 👏, 🎉, 💔, etc.) at the VERY BEGINNING of your response!
+- DO NOT react to normal, neutral, or casual messages. Only react if it's genuinely happy, exciting, or sad!`;
 }
 
 /**
@@ -643,7 +653,7 @@ async function fetchLatestSolvesSummary() {
  * Execute the Gemini LLM and reply to the chat.
  * Uses Dual-Prompt Architecture: dedicated direct-reply prompt on @sustCPbot mentions vs ambient evaluation prompt during casual chat!
  */
-async function executeAndReply(chatId) {
+async function executeAndReply(chatId, triggerMessageId = null) {
   try {
     // Capture the current timestamp to detect mid-flight new messages
     const generationStartTime = lastMessageTimes.get(chatId);
@@ -718,6 +728,15 @@ async function executeAndReply(chatId) {
       return;
     }
 
+    // ─── Extract Optional AI-Driven Reaction ───
+    let reactionEmoji = null;
+    const reactionMatch = reply.match(/\[REACTION:\s*(.+?)\]/i);
+    if (reactionMatch) {
+      reactionEmoji = reactionMatch[1].trim();
+      // Remove the tag from the final reply text sent to chat
+      reply = reply.replace(/\[REACTION:\s*(.+?)\]/i, "").trim();
+    }
+
     // Send the reply with HTML formatting (with automatic fallback to plain text if HTML tags are malformed)
     try {
       await bot.sendMessage(chatId, reply, { parse_mode: "HTML" });
@@ -731,6 +750,26 @@ async function executeAndReply(chatId) {
     wasLastMessageFromBot.set(chatId, true);
     // Reset the last message timestamp so silence timers calibrate accurately from bot reply time
     lastMessageTimes.set(chatId, Math.floor(Date.now() / 1000));
+
+    // If a reaction was requested and we know which message triggered it, react!
+    if (reactionEmoji && triggerMessageId) {
+      try {
+        if (typeof bot.setMessageReaction === "function") {
+          await bot.setMessageReaction(chatId, triggerMessageId, { reaction: [{ type: "emoji", emoji: reactionEmoji }] });
+        } else {
+          // Fallback if node-telegram-bot-api doesn't expose it directly yet
+          const axios = require('axios');
+          await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/setMessageReaction`, {
+            chat_id: chatId,
+            message_id: triggerMessageId,
+            reaction: [{ type: "emoji", emoji: reactionEmoji }]
+          });
+        }
+        console.log(`👍 Reacted to message ${triggerMessageId} with ${reactionEmoji}`);
+      } catch (reactionErr) {
+        console.error("⚠️ Failed to set message reaction:", reactionErr.message);
+      }
+    }
 
     // Append bot's own response to buffer so it has self-context (strip basic tags for buffer clarity)
     const cleanReply = reply.replace(/<[^>]*>?/gm, "");
@@ -801,7 +840,7 @@ bot.on("message", async (msg) => {
         chatTimers.delete(chatId);
       }
       console.log(`⚡ Immediate reply triggered (Bot directly summoned or following up)`);
-      executeAndReply(chatId);
+      executeAndReply(chatId, msg.message_id);
     } else if (timeDiff < DEBOUNCE_SEC_THRESHOLD) {
       // Chat is chaotic / fast (messages within 2 minutes) — debounce for 2 minutes (120s)
       if (chatTimers.has(chatId)) {
@@ -809,7 +848,7 @@ bot.on("message", async (msg) => {
       }
 
       const timeout = setTimeout(() => {
-        executeAndReply(chatId);
+        executeAndReply(chatId, msg.message_id);
       }, DEBOUNCE_MS);
 
       chatTimers.set(chatId, timeout);
@@ -822,7 +861,7 @@ bot.on("message", async (msg) => {
       }
 
       console.log(`⚡ Immediate reply triggered (${timeDiff}s silence >= 2 minutes)`);
-      executeAndReply(chatId);
+      executeAndReply(chatId, msg.message_id);
     }
   } catch (err) {
     console.error("❌ Message processing error:", err.message);
