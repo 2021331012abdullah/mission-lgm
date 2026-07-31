@@ -784,18 +784,23 @@ bot.on("message", async (msg) => {
     const timeDiff = messageTimestamp - prevTimestamp;
     const lastFromBot = wasLastMessageFromBot.get(chatId) || false;
 
+    // Fast-path check: if the bot is explicitly mentioned, do not wait for the debounce timer!
+    const msgText = msg.text || msg.caption || "";
+    const isMuteCommand = /(chup|quiet|reply dibi na|reply diyen na|reply dite hobe na|reply koro na|reply korbi na|do not reply|don'?t reply|mute|stop|shut up|stay quiet|stay silent|keep silent|be quiet|ei msg er reply dibi na)/i.test(msgText);
+    const isDirectlySummoned = /(@sustCPbot|sustcpbot|\bbot\b)/i.test(msgText) && !isMuteCommand;
+
     // Update last message time & mark that the newest message in chat is now from a regular user
     lastMessageTimes.set(chatId, messageTimestamp);
     wasLastMessageFromBot.set(chatId, false);
     idlePromptSent = false; // Reset idle reminder flag since a user posted in the group!
 
-    if (lastFromBot) {
-      // If the message right before this one was sent by our bot, respond immediately without debouncing!
+    if (lastFromBot || isDirectlySummoned) {
+      // If the message right before this one was sent by our bot, OR the bot is explicitly summoned, respond immediately without debouncing!
       if (chatTimers.has(chatId)) {
         clearTimeout(chatTimers.get(chatId));
         chatTimers.delete(chatId);
       }
-      console.log(`⚡ Immediate reply triggered (user replied directly after bot message!)`);
+      console.log(`⚡ Immediate reply triggered (Bot directly summoned or following up)`);
       executeAndReply(chatId);
     } else if (timeDiff < DEBOUNCE_SEC_THRESHOLD) {
       // Chat is chaotic / fast (messages within 2 minutes) — debounce for 2 minutes (120s)
