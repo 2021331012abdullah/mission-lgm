@@ -72,7 +72,7 @@ export function DaySection({
 
 
   // Download high-res PNG of the table for immediate social media attachment
-  // Uses an offscreen clone so the visible UI never flashes or resizes
+  // Uses an opaque overlay to mask the brief DOM expansion so the user sees no flash
   const handleDownloadImage = async () => {
     if (!tableContainerRef.current) return;
     setDownloadingImg(true);
@@ -80,51 +80,66 @@ export function DaySection({
       await waitForInitialSyncs();
       const el = tableContainerRef.current;
 
-      // Deep-clone the element into an offscreen container
-      const clone = el.cloneNode(true) as HTMLElement;
-      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+      // Place an opaque overlay to mask the DOM expansion from the user
+      const overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:#140E0A;display:flex;align-items:center;justify-content:center;color:#FFDF73;font-family:Cinzel,serif;font-size:18px;font-weight:700;letter-spacing:0.1em;";
+      overlay.textContent = "Generating Image…";
+      document.body.appendChild(overlay);
 
-      // Style the clone: full desktop width, no overflow clipping, positioned offscreen
-      clone.style.position = "absolute";
-      clone.style.left = "-9999px";
-      clone.style.top = "0";
-      clone.style.width = `${targetWidth}px`;
-      clone.style.minWidth = `${targetWidth}px`;
-      clone.style.maxWidth = "none";
-      clone.style.overflow = "visible";
-      clone.style.overflowX = "visible";
-      clone.style.zIndex = "-1";
-      clone.style.pointerEvents = "none";
+      // Force a paint so the overlay is visible before we start mutating
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-      // Remove overflow clipping from all descendants in the clone
-      clone.querySelectorAll("*").forEach((child) => {
+      // Save originals and expand the real element to full desktop width
+      const saved: { el: HTMLElement; ov: string; ovX: string; maxW: string }[] = [];
+      el.querySelectorAll("*").forEach((child) => {
         const htmlChild = child as HTMLElement;
         const computed = getComputedStyle(htmlChild);
         if (computed.overflow !== "visible" || computed.overflowX !== "visible") {
+          saved.push({
+            el: htmlChild,
+            ov: htmlChild.style.overflow,
+            ovX: htmlChild.style.overflowX,
+            maxW: htmlChild.style.maxWidth,
+          });
           htmlChild.style.overflow = "visible";
           htmlChild.style.overflowX = "visible";
           htmlChild.style.maxWidth = "none";
         }
       });
-
-      // Remove data-exclude-from-capture elements from clone (buttons, etc.)
-      clone.querySelectorAll("[data-exclude-from-capture]").forEach((n) => n.remove());
-
-      document.body.appendChild(clone);
-
-      const captureOptions = {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: "#140E0A",
-        width: targetWidth,
+      const origRoot = {
+        overflow: el.style.overflow, overflowX: el.style.overflowX,
+        width: el.style.width, minWidth: el.style.minWidth, maxWidth: el.style.maxWidth,
       };
+      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+      el.style.overflow = "visible";
+      el.style.overflowX = "visible";
+      el.style.width = `${targetWidth}px`;
+      el.style.minWidth = `${targetWidth}px`;
+      el.style.maxWidth = "none";
 
-      // CHROME/CHROMIUM WARMUP RENDER on the offscreen clone
-      try { await toPng(clone, { ...captureOptions, pixelRatio: 1 }); } catch {}
-      const dataUrl = await toPng(clone, captureOptions);
+      const excludeFilter = (node: any) =>
+        !(node && typeof node.hasAttribute === "function" && node.hasAttribute("data-exclude-from-capture"));
 
-      // Clean up the offscreen clone
-      document.body.removeChild(clone);
+      const captureOptions = { cacheBust: true, pixelRatio: 2, backgroundColor: "#140E0A", width: targetWidth, filter: excludeFilter };
+
+      // CHROME/CHROMIUM WARMUP RENDER
+      try { await toPng(el, { ...captureOptions, pixelRatio: 1 }); } catch {}
+      const dataUrl = await toPng(el, captureOptions);
+
+      // Restore all original styles
+      el.style.overflow = origRoot.overflow;
+      el.style.overflowX = origRoot.overflowX;
+      el.style.width = origRoot.width;
+      el.style.minWidth = origRoot.minWidth;
+      el.style.maxWidth = origRoot.maxWidth;
+      saved.forEach(({ el: c, ov, ovX, maxW }) => {
+        c.style.overflow = ov;
+        c.style.overflowX = ovX;
+        c.style.maxWidth = maxW;
+      });
+
+      // Remove overlay
+      document.body.removeChild(overlay);
 
       const link = document.createElement("a");
       link.download = `Mission_LGM_Chronicle_${day.date}.png`;
@@ -132,6 +147,8 @@ export function DaySection({
       link.click();
     } catch (err) {
       console.error("Failed to download table image:", err);
+      // Clean up overlay on error
+      document.querySelector("[style*='z-index:99999']")?.remove();
     } finally {
       setDownloadingImg(false);
     }
