@@ -120,10 +120,18 @@ function Index() {
     const el = document.getElementById(`chronicle-table-${date}`);
     if (el) {
       try {
+        // Prevent mobile cropping by forcing full un-cropped widescreen desktop dimensions during image capture
+        const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
         const blob = await toBlob(el, {
           cacheBust: true,
           pixelRatio: 2,
           backgroundColor: "#140E0A",
+          width: targetWidth,
+          style: {
+            width: `${targetWidth}px`,
+            minWidth: `${targetWidth}px`,
+            overflow: "visible",
+          },
           filter: (node: any) => !(node && typeof node.hasAttribute === "function" && node.hasAttribute("data-exclude-from-capture")),
         });
         if (blob) {

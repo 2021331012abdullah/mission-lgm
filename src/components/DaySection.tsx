@@ -85,9 +85,24 @@ export function DaySection({
     setDownloadingImg(true);
     try {
       await waitForInitialSyncs();
+      const el = tableContainerRef.current;
+      // Prevent mobile cropping by forcing full un-cropped widescreen desktop dimensions during image capture
+      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+      const captureOptions = {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#140E0A",
+        width: targetWidth,
+        style: {
+          width: `${targetWidth}px`,
+          minWidth: `${targetWidth}px`,
+          overflow: "visible",
+        },
+        filter: excludeButtonsFilter,
+      };
       // CHROME/CHROMIUM WARMUP RENDER: Force Chrome to settle font sizing and layout metrics before saving PNG!
-      try { await toPng(tableContainerRef.current, { cacheBust: true, pixelRatio: 1, backgroundColor: "#140E0A", filter: excludeButtonsFilter }); } catch {}
-      const dataUrl = await toPng(tableContainerRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: "#140E0A", filter: excludeButtonsFilter });
+      try { await toPng(el, { ...captureOptions, pixelRatio: 1 }); } catch {}
+      const dataUrl = await toPng(el, captureOptions);
       const link = document.createElement("a");
       link.download = `Mission_LGM_Chronicle_${day.date}.png`;
       link.href = dataUrl;
