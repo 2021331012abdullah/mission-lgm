@@ -93,17 +93,12 @@ export async function syncCFSolves(): Promise<boolean> {
                     ? `https://codeforces.com/contest/${sub.contestId}/submission/${subId}`
                     : `https://codeforces.com/problemset/submission/${sub.problem.contestId || 0}/${subId}`;
                     
+                  // Match ONLY by authoritative Problem ID (contestId + index), never by name
                   if (sub.problem.contestId && sub.problem.index) {
                     const key = `${sub.problem.contestId}${sub.problem.index}`.trim().toUpperCase();
                     solvedSet.add(key);
                     if (!urlMap.has(key)) urlMap.set(key, subUrl);
                     if (!idMap.has(key)) idMap.set(key, subId);
-                  }
-                  if (sub.problem.name) {
-                    const keyName = sub.problem.name.trim().toLowerCase();
-                    solvedSet.add(keyName);
-                    if (!urlMap.has(keyName)) urlMap.set(keyName, subUrl);
-                    if (!idMap.has(keyName)) idMap.set(keyName, subId);
                   }
                 }
               }
@@ -130,14 +125,13 @@ export async function syncCFSolves(): Promise<boolean> {
           const newSubmissionIds: Record<string, string> = { ...(prob.submissionIds || {}) };
           
           const probIdKey = prob.id ? prob.id.trim().toUpperCase() : "";
-          const probNameKey = prob.name ? prob.name.trim().toLowerCase() : "";
 
           handles.forEach((handle) => {
             const userData = solvedMap.get(handle);
-            if (userData && (userData.solvedSet.has(probIdKey) || userData.solvedSet.has(probNameKey))) {
+            if (userData && probIdKey && userData.solvedSet.has(probIdKey)) {
               newSolvedBy[handle] = true;
-              const link = userData.urlMap.get(probIdKey) || userData.urlMap.get(probNameKey);
-              const sId = userData.idMap.get(probIdKey) || userData.idMap.get(probNameKey);
+              const link = userData.urlMap.get(probIdKey);
+              const sId = userData.idMap.get(probIdKey);
               if (link) newSubmissionUrls[handle] = link;
               if (sId) newSubmissionIds[handle] = sId;
             } else if (newSolvedBy[handle] === undefined) {
