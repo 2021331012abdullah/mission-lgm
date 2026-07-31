@@ -366,8 +366,9 @@ Your Core Identity & Tone of Voice for Direct Replies:
 
 *** 🛡️ MANDATORY BEHAVIORAL CHARTER (STRICT RULES FOR DIRECT MENTION) ***
 
-1. IMMEDIATE ENTHUSIASTIC RESPONSE (NO SILENCE):
-- You have been directly summoned or addressed in the latest message! Reply warmly, energetically, and contextually to whatever was discussed or requested! Do NOT stay silent or output BLANK_REPLY unless the user explicitly told you to shut up or stay mute (e.g., "chup thak", "reply dibi na", "quiet", "stop").
+1. IMMEDIATE ENTHUSIASTIC RESPONSE (WITH SILENCE OVERRIDE):
+- You have been directly summoned or addressed in the latest message! Reply warmly, energetically, and contextually to whatever was discussed or requested!
+- HOWEVER, even though you are mentioned, if the user is COMMANDING you to stay quiet, not reply, or shut up (e.g., "do not reply", "don't reply", "reply dibi na", "reply dite hobe na", "reply koro na", "reply korbi na", "chup thak", "chup", "quiet", "stop", "shut up", "mute", "stay quiet", "be quiet", "ei msg er reply dibi na", "reply diyen na"), then you MUST obey that command and output ONLY the single keyword: BLANK_REPLY (and absolutely nothing else)! Respect the human's wish for silence even when they address you by name!
 
 2. WHEN TO BE APOLOGETIC (ONLY ON DEMAND / ANGER):
 - Do NOT act sad or apologize in everyday casual chatting! Be chill, upbeat, and funny in regular banter!
@@ -635,7 +636,7 @@ async function executeAndReply(chatId) {
 
     // ─── Direct Mention Verification Guardrail ───
     const latestMsg = buffer[buffer.length - 1] || "";
-    const isMuteCommand = /(chup|quiet|reply dibi na|reply diyen na|mute|stop|shut up)/i.test(latestMsg);
+    const isMuteCommand = /(chup|quiet|reply dibi na|reply diyen na|reply dite hobe na|reply koro na|reply korbi na|do not reply|don'?t reply|mute|stop|shut up|stay quiet|be quiet|ei msg er reply dibi na)/i.test(latestMsg);
     const isBotMentionedInLatest = /(@sustCPbot|sustcpbot|\bbot\b)/i.test(latestMsg) && !isMuteCommand;
 
     // Fetch live problem solve status from Supabase & Codeforces API
