@@ -1,0 +1,315 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Marcellus&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@source "../src";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Modern Classical Gaming UI & Illuminated Manuscript Light Theme
+ * Uses sleek flared serifs (Cinzel/Marcellus) for royal titles and crystal-clean sans-serif (Outfit/Inter) for data tables.
+ */
+
+@theme inline {
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-solved: var(--solved);
+  --color-unsolved: var(--unsolved);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --font-display: "Cinzel", "Marcellus", serif;
+  --font-sans: "Outfit", "Inter", sans-serif;
+  --font-mono: "Inter", monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #F8F2E6;
+  --foreground: #2A1C12;
+  --card: rgba(255, 252, 245, 0.9);
+  --card-foreground: #2A1C12;
+  --popover: #FAF6ED;
+  --popover-foreground: #2A1C12;
+  --primary: #A3731E;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EBE1CE;
+  --secondary-foreground: #382717;
+  --muted: #EDE3CF;
+  --muted-foreground: #7D6346;
+  --accent: #E5D5B8;
+  --accent-foreground: #5E3F15;
+  --destructive: #A3202C;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(184, 134, 52, 0.35);
+  --input: rgba(184, 134, 52, 0.25);
+  --ring: #A3731E;
+  --solved: #B58520;
+  --unsolved: #A63240;
+  --surface: rgba(255, 250, 240, 0.92);
+  --surface-2: rgba(250, 244, 232, 0.95);
+}
+
+.dark {
+  --background: #140E0A;
+  --foreground: #F4ECE1;
+  --card: rgba(26, 18, 14, 0.9);
+  --card-foreground: #F4ECE1;
+  --popover: #1C1410;
+  --popover-foreground: #F4ECE1;
+  --primary: #D4AF37;
+  --primary-foreground: #110D0A;
+  --secondary: #2C1E16;
+  --secondary-foreground: #EADBC8;
+  --muted: #241912;
+  --muted-foreground: #A69279;
+  --accent: #3A261A;
+  --accent-foreground: #FFDF73;
+  --destructive: #8B0000;
+  --destructive-foreground: #FFF3E2;
+  --border: rgba(212, 175, 55, 0.32);
+  --input: rgba(212, 175, 55, 0.22);
+  --ring: #D4AF37;
+  --solved: #E6B800;
+  --unsolved: #6B1C1C;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: #BA924F #F3EAE0;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #F3EAE0;
+    border-left: 1px solid rgba(184, 134, 52, 0.25);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #D4AF57 0%, #A67828 50%, #8C621C 100%);
+    border-radius: 4px;
+    border: 1px solid #FAF4E8;
+    box-shadow: 0 0 6px rgba(163, 115, 30, 0.3);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #E3C170 0%, #BA8935 50%, #A37322 100%);
+  }
+
+  body {
+    background-color: #F8F2E6;
+    background-image:
+      radial-gradient(80rem 60rem at 50% 0%, rgba(220, 180, 110, 0.35), transparent 75%),
+      radial-gradient(60rem 50rem at 10% 20%, rgba(195, 45, 65, 0.08), transparent 65%),
+      radial-gradient(70rem 60rem at 90% 80%, rgba(215, 165, 85, 0.25), transparent 70%),
+      radial-gradient(50rem 40rem at 50% 100%, rgba(135, 105, 60, 0.15), transparent 70%),
+      linear-gradient(180deg, rgba(253, 249, 240, 0.95) 0%, rgba(246, 238, 224, 0.96) 100%);
+    background-attachment: fixed;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 1.025rem;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+  }
+}
+
+/* Illuminated Manuscript Ivory & Vellum Tablet Style */
+@utility glass {
+  background: radial-gradient(120% 120% at 50% 0%, rgba(255, 253, 247, 0.92) 0%, rgba(248, 241, 228, 0.96) 100%);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(175, 128, 50, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+    0 0 25px -4px rgba(195, 145, 60, 0.15) inset,
+    0 14px 30px -10px rgba(120, 85, 40, 0.16),
+    0 4px 10px rgba(95, 65, 30, 0.08);
+  position: relative;
+}
+
+@utility glass-hover {
+  transition: all 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  &:hover {
+    background: radial-gradient(120% 120% at 50% 0%, rgba(255, 255, 252, 0.98) 0%, rgba(253, 248, 237, 0.98) 100%);
+    border-color: rgba(165, 115, 30, 0.7);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 1) inset,
+      0 0 35px -2px rgba(215, 160, 65, 0.25) inset,
+      0 18px 38px -8px rgba(120, 85, 40, 0.25),
+      0 0 16px rgba(195, 145, 60, 0.25);
+    transform: translateY(-2px);
+  }
+}
+
+/* Animated Traveling Edge Light & Scratchy Gold Plate Texture */
+@keyframes border-rotate-light {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.75));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 16px rgba(255, 235, 120, 1));
+  }
+}
+
+.royal-table-frame {
+  position: relative;
+  border-radius: 1.15rem;
+  padding: 2.5px;
+  overflow: hidden;
+  background: #2E2214;
+  box-shadow:
+    0 18px 45px -10px rgba(70, 50, 20, 0.38),
+    0 8px 20px rgba(0, 0, 0, 0.45);
+  transition: transform 300ms ease, box-shadow 300ms ease;
+}
+
+.royal-table-frame:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 24px 55px -8px rgba(90, 65, 25, 0.48),
+    0 0 28px rgba(255, 215, 0, 0.4);
+}
+
+/* Traveling edge lighting effect across shiny gold plate borders */
+.royal-table-frame::before {
+  content: "";
+  position: absolute;
+  top: -75%;
+  left: -75%;
+  width: 250%;
+  height: 250%;
+  background: conic-gradient(from 0deg,
+      rgba(184, 134, 52, 0.3) 0deg,
+      rgba(184, 134, 52, 0.3) 260deg,
+      #FFD700 305deg,
+      #FFFFFF 330deg,
+      #FFDF73 345deg,
+      rgba(184, 134, 52, 0.3) 360deg);
+  animation: border-rotate-light 5s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scratchy Gold Plate Inner Surface */
+.royal-table-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: calc(1.15rem - 2.5px);
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(88deg, rgba(255, 223, 115, 0.04) 0px, rgba(255, 223, 115, 0.04) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(177deg, rgba(0, 0, 0, 0.1) 0px, rgba(0, 0, 0, 0.1) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(28deg, rgba(255, 245, 180, 0.03) 0px, rgba(255, 245, 180, 0.03) 1px, transparent 1px, transparent 8px),
+    radial-gradient(ellipse at 50% 0%, rgba(245, 205, 120, 0.25) 0%, transparent 80%),
+    linear-gradient(150deg, #44331C 0%, #302313 55%, #22180C 100%);
+  box-shadow:
+    0 1px 0 0 rgba(255, 240, 180, 0.35) inset,
+    0 0 30px rgba(255, 215, 0, 0.15) inset;
+}
+
+/* Scratchy Brushed Gold Header Plate */
+.royal-table-header {
+  background:
+    repeating-linear-gradient(91deg, rgba(255, 225, 140, 0.06) 0px, rgba(255, 225, 140, 0.06) 1px, transparent 1px, transparent 4px),
+    repeating-linear-gradient(183deg, rgba(0, 0, 0, 0.15) 0px, rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 6px),
+    linear-gradient(180deg, rgba(82, 62, 34, 0.96) 0%, rgba(58, 44, 25, 0.98) 55%, rgba(46, 34, 19, 1) 100%);
+  border-bottom: 2px solid rgba(212, 175, 55, 0.65);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+/* Scratchy Gold Plate Row Textures */
+.scratchy-row-even {
+  background:
+    repeating-linear-gradient(89deg, rgba(255, 220, 120, 0.04) 0px, rgba(255, 220, 120, 0.04) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(12deg, rgba(0, 0, 0, 0.08) 0px, rgba(0, 0, 0, 0.08) 1px, transparent 1px, transparent 9px),
+    rgba(45, 33, 18, 0.94);
+}
+
+.scratchy-row-odd {
+  background:
+    repeating-linear-gradient(92deg, rgba(255, 220, 120, 0.04) 0px, rgba(255, 220, 120, 0.04) 1px, transparent 1px, transparent 4px),
+    repeating-linear-gradient(174deg, rgba(0, 0, 0, 0.1) 0px, rgba(0, 0, 0, 0.1) 1px, transparent 1px, transparent 7px),
+    rgba(54, 40, 22, 0.94);
+}
+
+.scratchy-table-th {
+  background: repeating-linear-gradient(88deg, #ffe6960d 0 1px, #0000 1px 3px), linear-gradient(#865009fa 0%, #000 100%);
+}
+
+.scratchy-table-tfoot {
+  background-color: #120E0A;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 215, 0, 0.05) 0, rgba(255, 215, 0, 0.05) 1px, transparent 0, transparent 7px),
+    repeating-linear-gradient(-45deg, rgba(255, 215, 0, 0.05) 0, rgba(255, 215, 0, 0.05) 1px, transparent 0, transparent 7px);
+}
+
+.glowing-tick {
+  animation: pulse-glow 2.5s infinite ease-in-out;
+}
+
+/* Special Burnished Gold & Crimson Text Gradients for Light Theme */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #B58322 0%, #875F13 45%, #6E4909 75%, #4C3204 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(140, 95, 25, 0.35));
+}
+
+.ruby-gradient-text {
+  background: linear-gradient(135deg, #C9243F 0%, #9E152B 50%, #6E0919 90%, #40020B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(160, 25, 50, 0.3));
+}
+
+.emerald-gradient-text {
+  background: linear-gradient(135deg, #1C8F4C 0%, #116B36 50%, #094823 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
