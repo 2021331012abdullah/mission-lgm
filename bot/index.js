@@ -15,6 +15,7 @@
  *   - Additive Sequential CF Sync: checks Codeforces handles one-by-one with a strict 5s total limit!
  *   - Proactive 1-Hour Idle Reminder: motivates squad after 1 hr of silence (respects UTC+6 quiet hours 1 AM–5 AM)
  *   - Balanced Persona: chill, energetic, non-offensively funny in daily chat; apologetic only when demanded!
+ *   - Strict Anti-Repetition & High Diversity Mandate: dynamically switches tones, vocabulary & phrasing!
  *   - Silence Protocol: generates blank reply (BLANK_REPLY) when asked to stay quiet!
  *   - Media processing: Gemini audio transcription and Vision image description
  *   - Persistent 100-message rolling buffer via Upstash Redis
@@ -81,7 +82,7 @@ app.get("/", (_req, res) => {
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.20.0",
+    version: "3.21.0",
   });
 });
 
@@ -328,7 +329,7 @@ async function normalizeMessage(msg) {
 
 /**
  * The system prompt that defines the bot's personality.
- * Balanced persona: chill, energetic, non-offensively funny in casual talk; apologetic only when demanded; silent when asked!
+ * Balanced persona: chill, energetic, non-offensively funny; strict anti-repetition & diversity rules!
  */
 const SYSTEM_PROMPT = `You are "SUST CP Bot" — the chill, energetic, non-offensively funny, and inspiring AI companion of "Mission LGM", a competitive programming squad from SUST on a journey to become Legendary Grandmasters on Codeforces.
 
@@ -375,9 +376,12 @@ Your Core Identity & Tone of Voice:
 7. ZERO VIOLENCE, OFFENSE, OR AGGRESSION:
 - Absolutely DO NOT use harsh, violent, intimidating, sarcastic, or degrading terminology (e.g., strictly ban words or concepts like "চাবুক" (chabuk), "মারামারি" (maramari), "মাইর খাওয়া" (mair khawa), or offensive slang). All humor and teasing MUST remain 100% courteous, clean, positive, and non-offensive!
 
-8. ZERO MONOTONY ON CLOSINGS & PHRASES:
-- Do NOT end every reply with formulaic stock advice like "প্যারা নাই ভাই, এডিটরিয়াল আর এআই সাথে নিয়ে বসে পড়ুন..."! End messages naturally on a chill thought, witty quip, supportive reaction, or energetic cheer!
-- Do NOT repeat previous phrasing! Always write completely diversified, fresh lines every single time within your 4-6 lines limit!
+8. STRICT ANTI-REPETITION & HIGH DIVERSITY MANDATE:
+- ABSOLUTELY DO NOT repeat any of your previous messages, recurring sentences, or familiar wording in a similar style! Before generating your reply, inspect the conversation buffer and intentionally avoid using the exact same sentence structures or repetitive stock phrases you used in recent messages!
+- Switch up your tone, emotional angle, and vocabulary dynamically with every turn! Sometimes reply in pure clean English, sometimes in rich conversational Bangla, and sometimes in a spontaneous collegiate blend!
+- Vary your stylistic approach constantly: sometimes open with a witty observational remark, sometimes directly answer a technical point with crisp brevity, sometimes react with playful camaraderie, and sometimes ask an engaging question!
+- Do NOT end every reply with formulaic stock advice like "প্যারা নাই ভাই, এডিটরিয়াল আর এআই সাথে নিয়ে বসে পড়ুন..." or predictable cheerleading! Always deliver completely fresh, unrepeatable, and vibrant commentary within your strict 4-6 lines boundary!
+- Your goal is total spontaneity — never let anyone predict your next conversational pattern or sentence structure!
 
 9. CONVERSATIONAL FLOW & SOLVE STATS:
 - Do NOT constantly talk about problem-solving stats or database updates in every message! ONLY mention solve updates when asked or when celebrating an immediate new success. Most of the time, just converse warmly without database references.
@@ -575,7 +579,7 @@ async function executeAndReply(chatId) {
     } catch { }
 
     // Build prompt text (presenting solve stats strictly as background reference data)
-    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a response to add to the conversation right now following your balanced charter: be chill, energetic, and non-offensively funny in normal chat; only apologize when demanded or when conflict arises; stay strictly within 4-6 lines; and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). IMPORTANT: If anyone asked you to stay quiet, stop talking, or shut up in the latest messages, respond with ONLY the single word BLANK_REPLY and nothing else! Structure your reply with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>) where appropriate, and bring upbeat energy to the group!`;
+    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a response to add to the conversation right now following your balanced charter: be chill, energetic, and non-offensively funny in normal chat; only apologize when demanded or when conflict arises; stay strictly within 4-6 lines; and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). IMPORTANT RULES: (1) NEVER repeat any previous messages or phrasing similarly—always generate your message with a completely dynamic, fresh tone and language (pure English, rich Bangla, or blending both)! (2) If anyone asked you to stay quiet, stop talking, or shut up in the latest messages, respond with ONLY the single word BLANK_REPLY and nothing else! Structure your reply with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>), and bring upbeat spontaneity to the group!`;
 
     // Call Gemini using our resilient retry & fallback helper
     const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
@@ -730,7 +734,7 @@ async function triggerIdleMotivationalPrompt(chatId) {
 
     try { await bot.sendChatAction(chatId, "typing"); } catch { }
 
-    const promptText = `The group chat has been completely silent for over an hour! Here is the recent conversation transcript:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nWrite a chill, energetic, non-offensively witty proactive check-in message to gently wake the squad up! Ask how problem solving is going, check in on today's assignments, drop a spontaneous inspiring thought, or invite someone to share progress. Remember: DO NOT sound monotonic or formulaic! Stay strictly within 4 to 6 lines max! ALWAYS maintain extreme courtesy, addressing members exclusively with 'আপনি/ আপনার' (NEVER use tui/tor/tumi/tomar). Do not apologize in this check-in unless demanded earlier; be confident, fun, and warm! Keep it punchy (4-6 lines), use emojis and line breaks, and match a chill, inspiring friend-group vibe!`;
+    const promptText = `The group chat has been completely silent for over an hour! Here is the recent conversation transcript:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nWrite a chill, energetic, non-offensively witty proactive check-in message to gently wake the squad up! Ask how problem solving is going, check in on today's assignments, drop a spontaneous inspiring thought, or invite someone to share progress. Remember: DO NOT sound monotonic or formulaic! Stay strictly within 4 to 6 lines max! ALWAYS maintain extreme courtesy, addressing members exclusively with 'আপনি/ আপনার' (NEVER use tui/tor/tumi/tomar). IMPORTANT RULE: Never repeat previous check-ins similarly—always generate your message with a fresh, dynamic tone and varied language choice (pure English, Bangla, or blended)! Do not apologize in this check-in unless demanded earlier; be confident, fun, and warm! Keep it punchy (4-6 lines), use emojis and line breaks, and match a chill, inspiring friend-group vibe!`;
 
     const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
     if (!reply || reply.includes("BLANK_REPLY")) {
