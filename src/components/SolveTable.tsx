@@ -43,7 +43,7 @@ export function SolveTable({
                 }`}
             >
               <td
-                className={`sticky left-0 z-10 min-w-[140px] max-w-[160px] sm:max-w-none sm:min-w-[260px] px-3 sm:px-7 py-3 sm:py-4 border-r border-[#D4AF37]/40 group-hover/row:bg-[#4A3821] transition-colors ${idx % 2 === 0 ? "scratchy-row-even" : "scratchy-row-odd"
+                className={`sticky left-0 z-10 min-w-[140px] max-w-[160px] sm:max-w-[340px] sm:min-w-[260px] px-3 sm:px-7 py-3 sm:py-4 border-r border-[#D4AF37]/40 group-hover/row:bg-[#4A3821] transition-colors ${idx % 2 === 0 ? "scratchy-row-even" : "scratchy-row-odd"
                   }`}
               >
                 <a
@@ -52,11 +52,11 @@ export function SolveTable({
                   rel="noreferrer"
                   className="group flex w-full items-center justify-between gap-2 sm:gap-4 text-left"
                 >
-                  <div className="flex flex-col gap-1 min-w-[120px] sm:min-w-[200px] shrink-0 overflow-hidden">
+                  <div className="flex flex-col gap-1 w-full max-w-full min-w-[120px] sm:min-w-[200px]">
                     <span className="inline-flex items-center self-start shrink-0 whitespace-nowrap rounded-md bg-gradient-to-r from-[#614725] to-[#3B2A14] px-2 sm:px-2.5 py-0.5 font-display text-[10px] sm:text-[11px] font-extrabold tabular-nums text-[#FFDF73] border border-[#D4AF37]/70 shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
                       §&nbsp;{p.id}
                     </span>
-                    <span className="block font-sans text-[13px] sm:text-[15px] font-bold leading-snug sm:leading-normal text-[#F7ECD8] transition-colors group-hover:text-[#FFDF73] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] truncate sm:whitespace-normal sm:overflow-visible" title={p.name}>
+                    <span className="block font-sans text-[13px] sm:text-[15px] font-bold leading-snug sm:leading-normal text-[#F7ECD8] transition-colors group-hover:text-[#FFDF73] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] whitespace-normal break-words" title={p.name}>
                       {p.name}
                     </span>
                   </div>
