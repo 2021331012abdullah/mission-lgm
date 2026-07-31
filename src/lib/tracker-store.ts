@@ -7,7 +7,7 @@ export type TrackerData = {
   days: TrackerDay[];
 };
 
-const KEY = "mission-lgm-tracker-v4-sust";
+const KEY = "mission-lgm-tracker-v5-sust";
 const DB_ID = "main_tracker";
 
 const defaults: TrackerData = { handles: defaultHandles, days: defaultDays };
@@ -120,9 +120,10 @@ export async function syncCFSolves(): Promise<boolean> {
       const updatedDays = clone(state.days).map((day) => ({
         ...day,
         problems: day.problems.map((prob) => {
-          const newSolvedBy: Record<string, boolean> = { ...prob.solvedBy };
-          const newSubmissionUrls: Record<string, string> = { ...(prob.submissionUrls || {}) };
-          const newSubmissionIds: Record<string, string> = { ...(prob.submissionIds || {}) };
+          // Start fresh — do NOT carry over old submission data that may have been incorrectly name-matched
+          const newSolvedBy: Record<string, boolean> = {};
+          const newSubmissionUrls: Record<string, string> = {};
+          const newSubmissionIds: Record<string, string> = {};
           
           const probIdKey = prob.id ? prob.id.trim().toUpperCase() : "";
 
@@ -134,7 +135,7 @@ export async function syncCFSolves(): Promise<boolean> {
               const sId = userData.idMap.get(probIdKey);
               if (link) newSubmissionUrls[handle] = link;
               if (sId) newSubmissionIds[handle] = sId;
-            } else if (newSolvedBy[handle] === undefined) {
+            } else {
               newSolvedBy[handle] = false;
             }
           });
