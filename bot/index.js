@@ -193,7 +193,7 @@ async function generateWithRetry(promptData, isMedia = false, customSystemPrompt
       } catch (err) {
         const isBusy = err.message.includes("503") || err.message.includes("429") || err.message.includes("high demand") || err.message.includes("RESOURCE_EXHAUSTED");
         console.warn(`⚠️ [Attempt ${attempt}] Model (${modelName}) warning: ${isBusy ? "Server temporarily busy (503/429)" : err.message}`);
-        
+
         if (isBusy && attempt < 2) {
           await new Promise((r) => setTimeout(r, 1200 * attempt));
           continue;
@@ -495,7 +495,7 @@ You are a humble observer and supportive AI companion, NOT an intrusive chatterb
 async function syncCodeforcesAndUpdateSupabase(trackerData) {
   try {
     console.log("⚡ Calling Codeforces API sequentially one-by-one (max 5s total limit)...");
-    
+
     // Roster handles from database or fallback to squad list
     const handles = Array.isArray(trackerData.handles) && trackerData.handles.length > 0
       ? trackerData.handles.map(h => h.trim()).filter(Boolean)
@@ -783,6 +783,46 @@ async function executeAndReply(chatId, triggerMessageId = null) {
 }
 
 // ─────────────────────────────────────────────
+//  7.5 Instant Reaction Evaluator (Per-Message)
+// ─────────────────────────────────────────────
+async function evaluateInstantReaction(chatId, messageId, text, senderName) {
+  if (!text || text.trim() === "") return;
+  
+  const prompt = `You are the SUST CP Bot analyzing a single message from ${senderName} in a competitive programming squad chat.
+Message: "${text}"
+
+Task: Determine if this message deserves a Telegram emoji reaction based on these strict rules:
+1. If they solved a hard problem, achieved a goal, or shared a great idea -> output exactly 🔥 or ❤️
+2. If they are sad, frustrated, or had a rating drop -> output exactly 😢
+3. If the message is genuinely funny or a good joke -> output exactly 🤣
+4. If it's just regular conversation, casual talk, or neutral questions -> output exactly BLANK
+
+Output ONLY ONE EMOJI or the word BLANK. Do not output anything else.`;
+
+  try {
+    const responseText = await generateWithRetry(prompt, false, "You are an emoji reaction classifier.");
+    const reply = responseText.trim();
+    
+    if (reply && reply !== "BLANK" && !reply.includes("BLANK")) {
+      console.log(`👍 Instant reaction decided for msg ${messageId}: ${reply}`);
+      if (typeof bot.setMessageReaction === "function") {
+        await bot.setMessageReaction(chatId, messageId, { reaction: [{ type: "emoji", emoji: reply }] });
+      } else {
+        const axios = require('axios');
+        await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/setMessageReaction`, {
+          chat_id: chatId,
+          message_id: messageId,
+          reaction: [{ type: "emoji", emoji: reply }]
+        });
+      }
+    }
+  } catch (err) {
+    // Silently ignore errors (like 429 Too Many Requests) to not disrupt chat flow
+    console.log(`⚠️ Instant reaction skipped due to error: ${err.message}`);
+  }
+}
+
+// ─────────────────────────────────────────────
 //  8. Module 2 + 4: Message Ingestion & Debouncer (2-Minute Delay)
 // ─────────────────────────────────────────────
 
@@ -817,6 +857,11 @@ bot.on("message", async (msg) => {
     // ─── Store in Redis buffer ───
     await appendToBuffer(chatId, normalizedEntry);
     console.log(`📝 Buffered: ${normalizedEntry.substring(0, 80)}...`);
+
+    // ─── Instant Reaction Check (Runs asynchronously in background) ───
+    if (typeof normalizedContent === "string" && normalizedContent.length > 0) {
+      evaluateInstantReaction(chatId, msg.message_id, normalizedContent, senderName);
+    }
 
     // ─── Dynamic Debouncer & Bot-Followup Logic ───
     const prevTimestamp = lastMessageTimes.get(chatId) || 0;
