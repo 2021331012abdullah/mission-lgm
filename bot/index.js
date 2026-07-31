@@ -12,7 +12,7 @@
  *   - Auto-Retry & Fallback: resilient against Google AI 503 traffic spikes
  *   - Debouncing: waits for 30s of silence before replying in fast chats
  *   - Instant Bot-Followup: replies immediately if previous msg was from bot!
- *   - Additive Live CF Sync: fetches latest submissions without overwriting older historical solves in the database!
+ *   - Additive Sequential CF Sync: checks Codeforces handles one-by-one with a strict 5s total limit without overwriting older historical solves in the database!
  *   - Media processing: Gemini audio transcription and Vision image description
  *   - Persistent 100-message rolling buffer via Upstash Redis
  *   - Mid-flight cancellation to avoid stale replies
@@ -76,9 +76,9 @@ app.get("/", (_req, res) => {
   res.status(200).json({
     name: "SUST CP Bot",
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
-    database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive CF Sync",
+    database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.7.0",
+    version: "3.8.0",
   });
 });
 
@@ -99,7 +99,7 @@ redis.on("error", (err) => console.error("🗄️  Redis error:", err.message));
 
 console.log("🤖 Telegram bot started in polling mode");
 console.log("⚡ Powered by Google Gemini 3.5 Flash (with High Diversity & 503 Auto-Retry)");
-console.log("📡 Connected to Supabase Tracker & Additive Codeforces Live API Sync");
+console.log("📡 Connected to Supabase Tracker & Additive Sequential Codeforces API Sync (5s limit)");
 console.log(`🔒 Locked to chat ID: ${ALLOWED_CHAT_ID}`);
 
 // ─────────────────────────────────────────────
@@ -354,22 +354,34 @@ Important rules:
 - If the conversation has nothing to do with CP, still engage naturally — you're part of the friend group!`;
 
 /**
- * Simultaneously query Codeforces API for all handles to fetch latest solve status.
+ * Sequentially query Codeforces API one-by-one for all handles to fetch latest solve status.
+ * Bounded by a strict 5-second total execution time limit to prevent slow bot responses!
  * Uses ADDITIVE MERGING: ONLY marks new solves as true; NEVER deletes or overwrites existing historical database solves!
  */
 async function syncCodeforcesAndUpdateSupabase(trackerData) {
   try {
-    console.log("⚡ Calling Codeforces API simultaneously for all handles (10s timeout)...");
+    console.log("⚡ Calling Codeforces API sequentially one-by-one (max 5s total limit)...");
     
     // Roster handles from database or fallback to squad list
     const handles = Array.isArray(trackerData.handles) && trackerData.handles.length > 0
       ? trackerData.handles.map(h => h.trim()).filter(Boolean)
       : ["-CHUNU-", "Arman42", "HossainMohammad", "AkibAzmain", "Wasif_Jamil", "CrazyCoder00"];
 
-    const fetchHandleSolves = async (handle) => {
+    const solvedMap = new Map();
+    const startTime = Date.now();
+
+    // Query each profile sequentially one-by-one
+    for (const handle of handles) {
+      // Check if our strict 5-second time limit has been reached
+      if (Date.now() - startTime >= 5000) {
+        console.warn(`⏳ 5-second CF sync limit reached! Pausing further handle checks for this turn.`);
+        break;
+      }
+
       try {
-        // Axios request fetching newest 500 submissions with a strict 9-second socket timeout
-        const resp = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=500`, { timeout: 9000 });
+        // Calculate remaining budget out of the 5-second limit
+        const remainingMs = Math.max(1000, 5000 - (Date.now() - startTime));
+        const resp = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=500`, { timeout: Math.min(4000, remainingMs) });
         const json = resp.data;
         const solvedSet = new Set();
         const urlMap = new Map();
@@ -378,7 +390,6 @@ async function syncCodeforcesAndUpdateSupabase(trackerData) {
         if (json && json.status === "OK" && Array.isArray(json.result)) {
           for (const sub of json.result) {
             if (sub.verdict === "OK" && sub.problem && sub.problem.contestId && sub.problem.index) {
-              // Match strictly by uppercase Problem ID (e.g. 1312E)
               const key = `${sub.problem.contestId}${sub.problem.index}`.trim().toUpperCase();
               solvedSet.add(key);
               if (!idMap.has(key)) {
@@ -392,27 +403,14 @@ async function syncCodeforcesAndUpdateSupabase(trackerData) {
             }
           }
         }
-        return { handle, success: true, solvedSet, urlMap, idMap };
+        solvedMap.set(handle, { handle, success: true, solvedSet, urlMap, idMap });
       } catch (err) {
-        console.warn(`⚠️ CF API attempt failed for ${handle}: ${err.message}`);
-        return { handle, success: false };
+        console.warn(`⚠️ CF API check skipped for ${handle}: ${err.message}`);
       }
-    };
-
-    // Execute simultaneously in parallel, bounded by a strict 10-second Promise timeout
-    const cfPromise = Promise.all(handles.map((h) => fetchHandleSolves(h)));
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("10-second Codeforces timeout exceeded")), 10000));
-
-    const results = await Promise.race([cfPromise, timeoutPromise]);
-    const solvedMap = new Map();
-    results.forEach((r) => {
-      if (r.success) {
-        solvedMap.set(r.handle, r);
-      }
-    });
+    }
 
     if (solvedMap.size === 0) {
-      console.log("⚠️ All CF requests unconfirmed or rate limited, skipping Supabase push.");
+      console.log("⚠️ No CF profiles confirmed within 5s limit, skipping Supabase push.");
       return;
     }
 
@@ -457,7 +455,7 @@ async function syncCodeforcesAndUpdateSupabase(trackerData) {
         console.log("✅ Supabase successfully updated with newest Codeforces solves!");
       }
     } else {
-      console.log("🟢 Codeforces live sync complete (no new unrecorded solves).");
+      console.log("🟢 Codeforces sequential sync complete (no new unrecorded solves).");
     }
   } catch (err) {
     console.warn(`⏳ CF sync process ignored (${err.message}). Continuing seamlessly with database snapshot.`);
@@ -481,7 +479,7 @@ async function fetchLatestSolvesSummary() {
 
     const trackerData = data.data;
 
-    // ─── Trigger Live Codeforces API Sync with 10s Timeout ───
+    // ─── Trigger Live Codeforces API Sequential Sync with 5s Limit ───
     await syncCodeforcesAndUpdateSupabase(trackerData);
 
     // Sort days descending by date string to ensure we pick the most recent day
