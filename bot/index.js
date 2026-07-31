@@ -651,7 +651,7 @@ async function executeAndReply(chatId) {
 
     // ─── Direct Mention Verification Guardrail ───
     const latestMsg = buffer[buffer.length - 1] || "";
-    const isMuteCommand = /(chup|quiet|reply dibi na|reply diyen na|reply dite hobe na|reply koro na|reply korbi na|do not reply|don'?t reply|mute|stop|shut up|stay quiet|be quiet|ei msg er reply dibi na)/i.test(latestMsg);
+    const isMuteCommand = /(chup|quiet|reply dibi na|reply diyen na|reply dite hobe na|reply koro na|reply korbi na|do not reply|don'?t reply|mute|stop|shut up|stay quiet|stay silent|keep silent|be quiet|ei msg er reply dibi na)/i.test(latestMsg);
     const isBotMentionedInLatest = /(@sustCPbot|sustcpbot|\bbot\b)/i.test(latestMsg) && !isMuteCommand;
 
     // Fetch live problem solve status from Supabase & Codeforces API
