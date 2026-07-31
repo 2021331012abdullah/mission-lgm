@@ -49,7 +49,6 @@ function Index() {
     return null;
   });
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { days, handles } = useTracker();
   const cfSyncing = useCFSyncStatus();
 
@@ -102,7 +101,7 @@ function Index() {
     // Update browser address bar without reload
     const url = new URL(window.location.href);
     url.searchParams.set("table", date);
-    url.hash = `table-${date}`;
+    url.hash = "";
     window.history.pushState({}, "", url.toString());
 
     const shareUrl = url.toString();
@@ -128,16 +127,6 @@ function Index() {
         console.warn("Could not render image for native share, falling back to link sharing:", err);
       }
     }
-
-    // Copy URL to clipboard immediately
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setToastMessage("Chronicle Link Copied to Clipboard!");
-      setTimeout(() => setToastMessage(null), 5000);
-    } catch (e) {
-      console.error("Clipboard copy failed:", e);
-    }
-
     // Launch OS native share popup if supported, passing the actual table image photo if allowed!
     if (navigator.share) {
       try {
@@ -170,13 +159,6 @@ function Index() {
 
   return (
     <main className="min-h-screen px-4 py-12 sm:px-8 relative">
-      {/* Toast notification when Share icon is clicked */}
-      {toastMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-full bg-[#140E0A] border-2 border-[#FFDF73] px-7 py-3.5 text-xs sm:text-sm font-display font-extrabold text-[#FFDF73] shadow-[0_0_30px_rgba(255,215,0,0.85)] animate-in fade-in slide-in-from-top-4 duration-300 max-w-2xl text-center">
-          <Check size={18} className="text-[#22D3EE] shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Full-Screen Centered Table Modal with Blurred Backdrop (Pops up IMMEDIATELY with zero latency!) */}
       {modalDay && (

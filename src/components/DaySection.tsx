@@ -1,10 +1,10 @@
 import { useState, useRef, useMemo } from "react";
-import { Crown, Shield, Swords, BookOpen, Target, Share2, Copy, Download, Check, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Crown, Shield, Swords, BookOpen, Share2, Download, Loader2 } from "lucide-react";
 import type { TrackerDay, Handle } from "@/data/tracker";
 import { waitForInitialSyncs } from "@/lib/tracker-store";
 import { getWarfareLine } from "@/data/warfare-lines";
 import { SolveTable } from "./SolveTable";
-import { toBlob, toPng } from "html-to-image";
+import { toPng } from "html-to-image";
 
 const MEDALS = [
   { 
@@ -52,9 +52,7 @@ export function DaySection({
   isModal?: boolean;
 }) {
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const [copyingImg, setCopyingImg] = useState(false);
   const [downloadingImg, setDownloadingImg] = useState(false);
-  const [copiedSuccess, setCopiedSuccess] = useState(false);
 
   // Retrieve a unique motivational warfare sentence for this chronicle
   const warfareMotto = useMemo(() => getWarfareLine(day.date), [day.date]);
@@ -80,26 +78,6 @@ export function DaySection({
     return true;
   };
 
-  // Copy table screenshot image directly to clipboard for Ctrl+V pasting into WhatsApp / Telegram / Facebook Web
-  const handleCopyImage = async () => {
-    if (!tableContainerRef.current) return;
-    setCopyingImg(true);
-    try {
-      await waitForInitialSyncs();
-      // CHROME/CHROMIUM WARMUP RENDER: Force Chrome to load custom fonts and settle flex alignment before final image extraction!
-      try { await toPng(tableContainerRef.current, { cacheBust: true, pixelRatio: 1, backgroundColor: "#140E0A", filter: excludeButtonsFilter }); } catch {}
-      const blob = await toBlob(tableContainerRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: "#140E0A", filter: excludeButtonsFilter });
-      if (blob && navigator.clipboard && navigator.clipboard.write) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setCopiedSuccess(true);
-        setTimeout(() => setCopiedSuccess(false), 3000);
-      }
-    } catch (err) {
-      console.error("Failed to copy table image:", err);
-    } finally {
-      setCopyingImg(false);
-    }
-  };
 
   // Download high-res PNG of the table for immediate social media attachment
   const handleDownloadImage = async () => {
@@ -161,28 +139,16 @@ export function DaySection({
               )}
 
               {isModal && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyImage}
-                    disabled={copyingImg}
-                    className="flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-[#523B18] via-[#3B2910] to-[#211608] border border-[#FFDF73]/80 px-3.5 py-2 font-display text-xs font-black uppercase text-[#FFDF73] hover:brightness-125 transition shadow-md disabled:opacity-50 cursor-pointer"
-                    title="Copy table picture to clipboard to paste directly into WhatsApp / Facebook / Telegram chat"
-                  >
-                    {copyingImg ? <Loader2 size={14} className="animate-spin" /> : copiedSuccess ? <Check size={14} className="text-[#22D3EE]" /> : <ImageIcon size={14} />}
-                    <span>{copiedSuccess ? "Copied Photo!" : "Copy Photo"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDownloadImage}
-                    disabled={downloadingImg}
-                    className="flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-[#523B18] via-[#3B2910] to-[#211608] border border-[#FFDF73]/80 px-3.5 py-2 font-display text-xs font-black uppercase text-[#FFDF73] hover:brightness-125 transition shadow-md disabled:opacity-50 cursor-pointer"
-                    title="Download table PNG image file for social media upload"
-                  >
-                    {downloadingImg ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                    <span>Save PNG</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  disabled={downloadingImg}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#7A5826] via-[#573C17] to-[#2E1E0B] border-2 border-[#FFDF73]/90 px-4 py-2 font-display text-xs font-black uppercase tracking-wider text-[#FFDF73] shadow-[0_4px_12px_rgba(0,0,0,0.9),_0_0_18px_rgba(255,215,0,0.4)] transition-all duration-300 hover:scale-105 hover:border-[#FFF5B0] disabled:opacity-50 cursor-pointer"
+                  title="Download table image file for social media upload"
+                >
+                  {downloadingImg ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} className="text-[#FFDF73] drop-shadow-[0_0_6px_rgba(255,215,0,0.9)]" />}
+                  <span>Save Image</span>
+                </button>
               )}
             </div>
           </div>

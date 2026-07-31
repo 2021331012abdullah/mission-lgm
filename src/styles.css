@@ -174,17 +174,7 @@
   }
 }
 
-/* Animated Traveling Edge Light & Scratchy Gold Plate Texture */
-@keyframes border-rotate-light {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
+/* Static Royal Gold Plate Texture Border (Zero CPU Animation Overhead) */
 @keyframes pulse-glow {
 
   0%,
@@ -202,7 +192,7 @@
   border-radius: 1.15rem;
   padding: 2.5px;
   overflow: hidden;
-  background: #2E2214;
+  background: linear-gradient(135deg, #D4AF37 0%, #6E4C1B 50%, #FFDF73 100%);
   box-shadow:
     0 18px 45px -10px rgba(70, 50, 20, 0.38),
     0 8px 20px rgba(0, 0, 0, 0.45);
@@ -216,25 +206,6 @@
     0 0 28px rgba(255, 215, 0, 0.4);
 }
 
-/* Traveling edge lighting effect across shiny gold plate borders */
-.royal-table-frame::before {
-  content: "";
-  position: absolute;
-  top: -75%;
-  left: -75%;
-  width: 250%;
-  height: 250%;
-  background: conic-gradient(from 0deg,
-      rgba(184, 134, 52, 0.3) 0deg,
-      rgba(184, 134, 52, 0.3) 260deg,
-      #FFD700 305deg,
-      #FFFFFF 330deg,
-      #FFDF73 345deg,
-      rgba(184, 134, 52, 0.3) 360deg);
-  animation: border-rotate-light 5s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-}
 
 /* Scratchy Gold Plate Inner Surface */
 .royal-table-inner {
