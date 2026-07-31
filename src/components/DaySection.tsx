@@ -86,23 +86,68 @@ export function DaySection({
     try {
       await waitForInitialSyncs();
       const el = tableContainerRef.current;
-      // Prevent mobile cropping by forcing full un-cropped widescreen desktop dimensions during image capture
+
+      // Temporarily force all child elements to full desktop width and remove overflow clipping
+      // so html-to-image captures the entire table instead of just the visible mobile viewport
+      const overflowEls: { el: HTMLElement; ov: string; ovX: string; maxW: string; w: string; minW: string }[] = [];
+      el.querySelectorAll("*").forEach((child) => {
+        const htmlChild = child as HTMLElement;
+        const cs = htmlChild.style;
+        const computed = getComputedStyle(htmlChild);
+        if (computed.overflow !== "visible" || computed.overflowX !== "visible") {
+          overflowEls.push({
+            el: htmlChild,
+            ov: cs.overflow,
+            ovX: cs.overflowX,
+            maxW: cs.maxWidth,
+            w: cs.width,
+            minW: cs.minWidth,
+          });
+          htmlChild.style.overflow = "visible";
+          htmlChild.style.overflowX = "visible";
+          htmlChild.style.maxWidth = "none";
+        }
+      });
+
+      // Also override the root captured element itself
+      const origRootStyles = {
+        overflow: el.style.overflow,
+        overflowX: el.style.overflowX,
+        width: el.style.width,
+        minWidth: el.style.minWidth,
+        maxWidth: el.style.maxWidth,
+      };
       const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+      el.style.overflow = "visible";
+      el.style.overflowX = "visible";
+      el.style.width = `${targetWidth}px`;
+      el.style.minWidth = `${targetWidth}px`;
+      el.style.maxWidth = "none";
+
       const captureOptions = {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#140E0A",
         width: targetWidth,
-        style: {
-          width: `${targetWidth}px`,
-          minWidth: `${targetWidth}px`,
-          overflow: "visible",
-        },
         filter: excludeButtonsFilter,
       };
-      // CHROME/CHROMIUM WARMUP RENDER: Force Chrome to settle font sizing and layout metrics before saving PNG!
+
+      // CHROME/CHROMIUM WARMUP RENDER
       try { await toPng(el, { ...captureOptions, pixelRatio: 1 }); } catch {}
       const dataUrl = await toPng(el, captureOptions);
+
+      // Restore all original overflow styles
+      el.style.overflow = origRootStyles.overflow;
+      el.style.overflowX = origRootStyles.overflowX;
+      el.style.width = origRootStyles.width;
+      el.style.minWidth = origRootStyles.minWidth;
+      el.style.maxWidth = origRootStyles.maxWidth;
+      overflowEls.forEach(({ el: child, ov, ovX, maxW }) => {
+        child.style.overflow = ov;
+        child.style.overflowX = ovX;
+        child.style.maxWidth = maxW;
+      });
+
       const link = document.createElement("a");
       link.download = `Mission_LGM_Chronicle_${day.date}.png`;
       link.href = dataUrl;

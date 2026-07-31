@@ -119,19 +119,43 @@ function Index() {
     let imageFile: File | null = null;
     const el = document.getElementById(`chronicle-table-${date}`);
     if (el) {
+      // Temporarily remove overflow clipping from ALL descendant elements so the full table is captured
+      const overflowEls: { el: HTMLElement; ov: string; ovX: string; maxW: string }[] = [];
+      el.querySelectorAll("*").forEach((child) => {
+        const htmlChild = child as HTMLElement;
+        const computed = getComputedStyle(htmlChild);
+        if (computed.overflow !== "visible" || computed.overflowX !== "visible") {
+          overflowEls.push({
+            el: htmlChild,
+            ov: htmlChild.style.overflow,
+            ovX: htmlChild.style.overflowX,
+            maxW: htmlChild.style.maxWidth,
+          });
+          htmlChild.style.overflow = "visible";
+          htmlChild.style.overflowX = "visible";
+          htmlChild.style.maxWidth = "none";
+        }
+      });
+      const origStyles = {
+        overflow: el.style.overflow,
+        overflowX: el.style.overflowX,
+        width: el.style.width,
+        minWidth: el.style.minWidth,
+        maxWidth: el.style.maxWidth,
+      };
+      const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
+      el.style.overflow = "visible";
+      el.style.overflowX = "visible";
+      el.style.width = `${targetWidth}px`;
+      el.style.minWidth = `${targetWidth}px`;
+      el.style.maxWidth = "none";
+
       try {
-        // Prevent mobile cropping by forcing full un-cropped widescreen desktop dimensions during image capture
-        const targetWidth = Math.max(1050, el.scrollWidth, el.clientWidth);
         const blob = await toBlob(el, {
           cacheBust: true,
           pixelRatio: 2,
           backgroundColor: "#140E0A",
           width: targetWidth,
-          style: {
-            width: `${targetWidth}px`,
-            minWidth: `${targetWidth}px`,
-            overflow: "visible",
-          },
           filter: (node: any) => !(node && typeof node.hasAttribute === "function" && node.hasAttribute("data-exclude-from-capture")),
         });
         if (blob) {
@@ -140,6 +164,18 @@ function Index() {
       } catch (err) {
         console.warn("Could not render image for native share, falling back to link sharing:", err);
       }
+
+      // Restore all original styles
+      el.style.overflow = origStyles.overflow;
+      el.style.overflowX = origStyles.overflowX;
+      el.style.width = origStyles.width;
+      el.style.minWidth = origStyles.minWidth;
+      el.style.maxWidth = origStyles.maxWidth;
+      overflowEls.forEach(({ el: child, ov, ovX, maxW }) => {
+        child.style.overflow = ov;
+        child.style.overflowX = ovX;
+        child.style.maxWidth = maxW;
+      });
     }
     // Launch OS native share popup if supported, passing the actual table image photo if allowed!
     if (navigator.share) {
