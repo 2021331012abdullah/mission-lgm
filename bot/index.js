@@ -441,12 +441,12 @@ You are a humble observer and supportive AI companion, NOT an intrusive chatterb
 - WHEN YOU MUST STAY SILENT (By Default during Regular Conversations):
   * CASUAL BANTER & REGULAR TALK: If group members are just chatting casually, greeting each other, or cracking general jokes during regular conversation time without invoking the bot, stay quiet! Output BLANK_REPLY!
   * DIRECTED AT ANOTHER HUMAN: If a user mentions or tags another squad member by name (e.g. calling out "Arman", "Murad", "Turja", or "@someone") to talk with them, ask them a question, or ask them for help, DO NOT INTERRUPT THEIR CONVERSATION! Output BLANK_REPLY!
-  * RESOLVED OR NORMAL TOPICS: If nobody is currently facing a problem, stuck on an algorithm, or needing emotional support, simply remain silent! Output BLANK_REPLY!
   * EXPLICIT SILENCE COMMAND: If anyone asks you to stay quiet or skip replying (e.g., "chup thak", "reply dibi na", "quiet", "stop", "chup") in the latest turn, output BLANK_REPLY!
 - WHEN YOU MUST SPEAK UP (The Exception Window — Do NOT stay silent):
-  1. PROBLEM SOLVING STRUGGLE OR FRUSTRATION: When anyone indicates they CANNOT solve a problem, are stuck on debugging/logic, feel frustrated, or express sadness/despair over contest rating drops, YOU MUST SPEAK UP! Step in with empathetic encouragement and the Mission LGM never-give-up spirit! Remind them: read the editorial, study others' accepted code, take help from AI (Gemini/GPT) to understand the logic, but NEVER stop solving! They have to complete this journey!
-  2. CELEBRATING A SOLVE OR NEW LEARNING: When anyone writes that they solved a new problem, confirm a new accepted submission, OR share that they learned a new thing / algorithm / coding technique, YOU MUST SPEAK UP INSTANTLY! Shower them with high-energy congratulations ("LETS GOOOO 🔥", "মাশাআল্লাহ!", "অসাধারণ সমাধান ভাইয়া! 🚀")! Remind them every solve is one step closer to Grandmaster — keep the grid, keep the momentum!
-  3. PROACTIVE TIMERS OR OPEN QUESTIONS: When triggered by the proactive 1-hour idle check-in, or when someone asks an open unaddressed question seeking score checkups!
+  * PROBLEM SOLVING STRUGGLE OR FRUSTRATION: When anyone indicates they CANNOT solve a problem, are stuck on debugging/logic, feel frustrated, or express sadness/despair over contest rating drops, YOU MUST SPEAK UP! Step in with empathetic encouragement and the Mission LGM never-give-up spirit! Remind them: read the editorial, study others' accepted code, take help from AI (Gemini/GPT) to understand the logic, but NEVER stop solving! They have to complete this journey!
+  * CELEBRATING A SOLVE OR NEW LEARNING: When anyone writes that they solved a new problem, confirm a new accepted submission, OR share that they learned a new thing / algorithm / coding technique, YOU MUST SPEAK UP INSTANTLY! Shower them with high-energy congratulations ("LETS GOOOO 🔥", "মাশাআল্লাহ!", "অসাধারণ সমাধান ভাইয়া! 🚀")! Remind them every solve is one step closer to Grandmaster — keep the grid, keep the momentum!
+  * PROACTIVE TIMERS OR OPEN QUESTIONS: When triggered by the proactive 1-hour idle check-in, or when someone asks an open unaddressed question seeking score checkups!
+  * Share great facts and findings. Share experiences.
 
 2. WHEN TO BE APOLOGETIC (ONLY ON DEMAND / ANGER):
 - Do NOT act sad or apologize in everyday casual chatting! Be chill, upbeat, and funny in regular banter!
@@ -698,7 +698,7 @@ async function executeAndReply(chatId, triggerMessageId = null) {
     } else {
       console.log("🕵️ Ambient group discussion! Using default-silence evaluation prompt.");
       dynamicSystemPrompt = getAmbientObservationSystemPrompt(targetLines);
-      promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nEvaluate whether you need to reply right now following your ambient observation rules! Most of the time during regular conversation time and casual human chit-chat, when members address each other by name/tag, or when no one is stuck/celebrating, YOU MUST DEFAULT TO SILENCE and output ONLY the single keyword BLANK_REPLY! Only speak up in these specific ambient moments: (a) someone cannot solve a problem or is feeling stuck, frustrated, or sad; (b) someone confirmed solving a new problem OR learning a new coding algorithm/concept (celebrate instantly!); or (c) someone demanded an apology. If you do speak up, be chill, energetic, and non-offensively funny; stay strictly around ${targetLines} lines (absolute maximum 6 lines!); and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). Structure your reply with line breaks and emojis!`;
+      promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nEvaluate whether you need to reply right now following your ambient observation rules! Most of the time during regular conversation time and casual human chit-chat, when members address each other by name/tag, or when no one is stuck/celebrating, YOU MUST DEFAULT TO SILENCE and output ONLY the single keyword BLANK_REPLY! Only speak up in these specific ambient moments: (a) someone cannot solve a problem or is feeling stuck, frustrated, or sad; (b) someone confirmed solving a new problem OR learning a new coding algorithm/concept (celebrate instantly!); (c) someone demanded an apology; or (d) someone shared great facts, findings, or experiences. If you do speak up, be chill, energetic, and non-offensively funny; stay strictly around ${targetLines} lines (absolute maximum 6 lines!); and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). Structure your reply with line breaks and emojis!`;
     }
 
     // Call Gemini using our resilient retry & fallback helper
@@ -787,7 +787,7 @@ async function executeAndReply(chatId, triggerMessageId = null) {
 // ─────────────────────────────────────────────
 async function evaluateInstantReaction(chatId, messageId, text, senderName) {
   if (!text || text.trim() === "") return;
-  
+
   const prompt = `You are the SUST CP Bot analyzing a single message from ${senderName} in a competitive programming squad chat.
 Message: "${text}"
 
@@ -802,7 +802,7 @@ Output ONLY ONE EMOJI or the word BLANK. Do not output anything else.`;
   try {
     const responseText = await generateWithRetry(prompt, false, "You are an emoji reaction classifier.");
     const reply = responseText.trim();
-    
+
     if (reply && reply !== "BLANK" && !reply.includes("BLANK")) {
       console.log(`👍 Instant reaction decided for msg ${messageId}: ${reply}`);
       if (typeof bot.setMessageReaction === "function") {
