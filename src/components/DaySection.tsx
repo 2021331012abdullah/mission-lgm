@@ -193,11 +193,11 @@ export function DaySection({
               {podium.map((p, i) => (
                 <span
                   key={p.handle}
-                  className={`flex items-center gap-2 rounded-lg ${MEDALS[i].bg} border ${MEDALS[i].border} px-3 py-1.5 shadow-[0_3px_8px_rgba(0,0,0,0.7)]`}
+                  className={`flex items-center gap-2 rounded-lg ${MEDALS[i].bg} border ${MEDALS[i].border} px-3 py-1.5 shadow-[0_3px_8px_rgba(0,0,0,0.7)] whitespace-nowrap shrink-0`}
                   title={`${MEDALS[i].label} — ${p.solved} conquered trials`}
                 >
                   {MEDALS[i].icon}
-                  <span className="font-display text-xs font-extrabold text-[#FFFDF8] tracking-wide drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+                  <span className="font-display text-xs font-extrabold text-[#FFFDF8] tracking-wide drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] whitespace-nowrap">
                     {p.handle}
                   </span>
                   <span className={`flex items-center gap-1 font-display text-xs font-black tabular-nums ${MEDALS[i].text}`}>

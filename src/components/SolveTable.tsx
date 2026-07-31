@@ -25,7 +25,7 @@ export function SolveTable({
             {handles.map((h) => (
               <th
                 key={h}
-                className="border-l border-[#D4AF37]/35 px-4 py-4 text-center font-display text-xs font-extrabold uppercase tracking-wider text-[#FFF9F0] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]"
+                className="border-l border-[#D4AF37]/35 px-4 py-4 text-center font-display text-xs font-extrabold uppercase tracking-wider text-[#FFF9F0] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] whitespace-nowrap"
               >
                 {h}
               </th>
@@ -49,9 +49,9 @@ export function SolveTable({
                   rel="noreferrer"
                   className="group flex w-full items-center justify-between gap-4 text-left"
                 >
-                  <div className="flex flex-col gap-1 min-w-[200px]">
-                    <span className="inline-block self-start rounded-md bg-gradient-to-r from-[#614725] to-[#3B2A14] px-2.5 py-0.5 font-display text-[11px] font-extrabold tabular-nums text-[#FFDF73] border border-[#D4AF37]/70 shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
-                      § {p.id}
+                  <div className="flex flex-col gap-1 min-w-[200px] shrink-0">
+                    <span className="inline-flex items-center self-start shrink-0 whitespace-nowrap rounded-md bg-gradient-to-r from-[#614725] to-[#3B2A14] px-2.5 py-0.5 font-display text-[11px] font-extrabold tabular-nums text-[#FFDF73] border border-[#D4AF37]/70 shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+                      §&nbsp;{p.id}
                     </span>
                     <span className="block font-sans text-[15px] font-bold text-[#F7ECD8] transition-colors group-hover:text-[#FFDF73] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
                       {p.name}
@@ -79,7 +79,7 @@ export function SolveTable({
             {handles.map((h) => (
               <td
                 key={h}
-                className="border-l border-[#D4AF37]/40 px-4 py-5 text-center font-display tabular-nums text-[#E8D4AE]"
+                className="border-l border-[#D4AF37]/40 px-4 py-5 text-center font-display tabular-nums text-[#E8D4AE] whitespace-nowrap"
               >
                 <span className="text-[#FFDF73] text-2xl font-black drop-shadow-[0_2px_3px_rgba(0,0,0,1),_0_0_15px_rgba(255,215,0,0.8)]">{countFor(h)}</span>
                 <span className="text-sm font-extrabold text-[#D6B57E] ml-1">/ {problems.length}</span>
