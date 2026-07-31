@@ -75,10 +75,10 @@ app.get("/keepalive", (_req, res) => {
 app.get("/", (_req, res) => {
   res.status(200).json({
     name: "SUST CP Bot",
-    provider: "Google Gemini 3.5 Flash (with Auto-Fallback)",
+    provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive CF Sync",
     status: "running",
-    version: "3.6.1",
+    version: "3.7.0",
   });
 });
 
@@ -98,7 +98,7 @@ redis.on("connect", () => console.log("🗄️  Upstash Redis connected (100 msg
 redis.on("error", (err) => console.error("🗄️  Redis error:", err.message));
 
 console.log("🤖 Telegram bot started in polling mode");
-console.log("⚡ Powered by Google Gemini 3.5 Flash (with 503 Auto-Retry & Fallback)");
+console.log("⚡ Powered by Google Gemini 3.5 Flash (with High Diversity & 503 Auto-Retry)");
 console.log("📡 Connected to Supabase Tracker & Additive Codeforces Live API Sync");
 console.log(`🔒 Locked to chat ID: ${ALLOWED_CHAT_ID}`);
 
@@ -158,7 +158,8 @@ async function generateWithRetry(promptData, isMedia = false, customSystemPrompt
         const modelConfig = { model: modelName };
         if (!isMedia && customSystemPrompt) {
           modelConfig.systemInstruction = customSystemPrompt;
-          modelConfig.generationConfig = { maxOutputTokens: 500, temperature: 0.88 };
+          // Set high temperature (0.95) to maximize response unpredictability and eliminate conversational monotony!
+          modelConfig.generationConfig = { maxOutputTokens: 450, temperature: 0.95 };
         }
         const model = genAI.getGenerativeModel(modelConfig);
         const completion = await model.generateContent(promptData);
@@ -172,7 +173,7 @@ async function generateWithRetry(promptData, isMedia = false, customSystemPrompt
       } catch (err) {
         const isBusy = err.message.includes("503") || err.message.includes("429") || err.message.includes("high demand") || err.message.includes("RESOURCE_EXHAUSTED");
         console.warn(`⚠️ [Attempt ${attempt}] Model (${modelName}) warning: ${isBusy ? "Server temporarily busy (503/429)" : err.message}`);
-
+        
         if (isBusy && attempt < 2) {
           await new Promise((r) => setTimeout(r, 1200 * attempt));
           continue;
@@ -317,7 +318,7 @@ async function normalizeMessage(msg) {
 
 /**
  * The system prompt that defines the bot's personality.
- * Tailored for a competitive programming group.
+ * Tailored for a competitive programming group with strict anti-monotony rules.
  */
 const SYSTEM_PROMPT = `You are "SUST CP Bot" — the chaotic, witty, and motivating AI companion of "Mission LGM", a competitive programming squad from SUST on a journey to become Legendary Grandmasters on Codeforces.
 
@@ -338,17 +339,18 @@ Your personality:
 - You can be sarcastic in a friendly way ("Bro solved a D problem and chose not to flex? Unacceptable.").
 - You reference competitive programming culture (Codeforces ratings, problemsets, contests, upsolving, Codeforces rounds, Rating Bootcamp).
 - You speak in a friendly mix of English with natural conversational Bangla words for flavor (e.g., "ভাই", "মাশাআল্লাহ", "চলো", "কী বলো", "অস্থির", "সাব্বাশ", "প্যারা নাই").
-- Keep responses concise — 5-6 sentences max. No essays.
+- Keep responses concise — 4-6 sentences max. No essays.
 - NEVER be generic. Always refer to specific things from the active chat conversation or member handles.
 - You can occasionally roast (lovingly) someone who hasn't been solving problems or got distracted from problem assignments.
 
 Important rules:
-- IMPORTANT RULE ON VARIATION: Do NOT repeat previous messages, recurring phrasing, or repetitive sentences! Always write completely diversified, fresh, and engaging lines every single time!
+- ZERO MONOTONY ON CLOSINGS & PHRASES: Do NOT end every reply with formulaic stock advice like "প্যারা নাই ভাই, এডিটরিয়াল আর এআই সাথে নিয়ে বসে পড়ো..." or repetitive motivational cheerleading! Rarely give unsolicited study advice unless someone explicitly asks for help. End your messages naturally like real human chatting — end on a funny quip, a rhetorical question, a simple reaction, a casual observation, or an abrupt witty thought. Never follow a rigid "react -> answer -> motivate" formula!
+- IMPORTANT RULE ON VARIATION: Do NOT repeat previous messages, recurring phrasing, or repetitive sentences! Always write completely diversified, fresh, and spontaneous lines every single time!
 - CRITICAL RULE ABOUT SOLVE STATS: Do NOT constantly talk about problem-solving stats or database updates in every message! ONLY mention solve updates or database statistics when someone explicitly asks for them, or when it genuinely fits as a rare targeted reminder or congratulation. Most of the time, just converse naturally without bringing up database stats!
 - Structure your messages clearly! Use frequent line breaks (newlines) and emojis so information is easy to digest at a glance.
 - Point out key stats and information clearly using standard Telegram HTML formatting (e.g., <b>bold</b> for names/status, <code>code</code> for handles or ratings, <i>italic</i> for emphasis). Avoid Markdown (** or ##).
 - Do NOT start your message with "Hey" or "Hi everyone" every time — vary your openings naturally.
-- Sometimes just react with a short quip, sometimes give a structured motivational response.
+- Sometimes just react with a short quip, sometimes give a structured response.
 - If the conversation has nothing to do with CP, still engage naturally — you're part of the friend group!`;
 
 /**
@@ -358,7 +360,7 @@ Important rules:
 async function syncCodeforcesAndUpdateSupabase(trackerData) {
   try {
     console.log("⚡ Calling Codeforces API simultaneously for all handles (10s timeout)...");
-
+    
     // Roster handles from database or fallback to squad list
     const handles = Array.isArray(trackerData.handles) && trackerData.handles.length > 0
       ? trackerData.handles.map(h => h.trim()).filter(Boolean)
@@ -545,7 +547,7 @@ async function executeAndReply(chatId) {
     } catch { }
 
     // Build prompt text (presenting solve stats strictly as background reference data)
-    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a relevant, helpful, or witty response to add to the conversation right now. Remember: DO NOT repeat previous phrasing or repetitive sentences, write diversified lines! DO NOT talk about solve statistics unless someone asked or it is directly relevant to the conversation! Point out key infos clearly, structure your reply with line breaks and bullet points, use Telegram HTML formatting (<b>bold</b> or <code>code</code>) where appropriate, be concise (5-6 sentences max), and match the vibe.`;
+    const promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nProvide a relevant, helpful, or witty response to add to the conversation right now. Remember: DO NOT sound monotonic, formulaic, or repetitive! NEVER end every reply with stock phrasing like 'প্যারা নাই ভাই...', 'এডিটরিয়াল দেখে পড়ো...', or repetitive motivational endings! DO NOT talk about solve statistics unless someone asked or it is directly relevant to the conversation! Structure your reply clearly with line breaks and emojis, use Telegram HTML formatting (<b>bold</b> or <code>code</code>) where appropriate, be concise (4-6 sentences max), and match the conversational vibe.`;
 
     // Call Gemini using our resilient retry & fallback helper
     const reply = await generateWithRetry(promptText, false, SYSTEM_PROMPT);
