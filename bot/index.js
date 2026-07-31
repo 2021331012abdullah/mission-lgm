@@ -15,7 +15,7 @@
  *   - Additive Sequential CF Sync: checks Codeforces handles one-by-one with a strict 5s total limit!
  *   - Proactive 1-Hour Idle Reminder: motivates squad after 1 hr of silence (respects UTC+6 quiet hours 1 AM–5 AM)
  *   - Balanced Persona: chill, energetic, non-offensively funny in daily chat; apologetic only when demanded!
- *   - 70% Default Silence & Intelligent Restraint: stays silent (BLANK_REPLY) 70% of the time during casual talk!
+ *   - Default Silence & Intelligent Restraint: stays silent (BLANK_REPLY) most of the time during regular conversations!
  *   - 100% Direct Mention Guarantee: NEVER stays silent when explicitly tagged (@sustCPbot) in the latest turn!
  *   - Randomized Reply Lengths: injects dynamic randomized 2 to 6 line targets into prompt every turn!
  *   - Strict Anti-Repetition & High Diversity Mandate: dynamically switches tones, vocabulary & phrasing!
@@ -85,7 +85,7 @@ app.get("/", (_req, res) => {
     provider: "Google Gemini 3.5 Flash (with Auto-Fallback & High Diversity)",
     database: "Upstash Redis (100 msgs) & Supabase Tracker with Additive Sequential CF Sync",
     status: "running",
-    version: "3.27.0 (100% Direct Mention Guarantee & 70% Silence Policy)",
+    version: "3.28.0 (Default Silence During Regular Conversations & 100% Mention Guarantee)",
   });
 });
 
@@ -339,7 +339,7 @@ async function normalizeMessage(msg) {
 
 /**
  * Dynamic system prompt builder that injects randomized target line counts (2-6 lines),
- * mandates the 70% default silence policy, and enforces a 100% direct mention response guarantee.
+ * mandates remaining silent most of the time during regular conversations, and enforces a 100% direct mention guarantee.
  */
 function getSystemPrompt(maxLines = 4) {
   return `You are "SUST CP Bot" — the chill, energetic, non-offensively funny, and inspiring AI companion of "Mission LGM", a competitive programming squad from SUST on a journey to become Legendary Grandmasters on Codeforces.
@@ -361,15 +361,15 @@ Your Core Identity & Tone of Voice:
 
 *** 🛡️ MANDATORY BEHAVIORAL CHARTER (STRICT RULES) ***
 
-1. THE 70% SILENCE MANDATE, INTELLIGENT RESTRAINT & 100% DIRECT MENTION GUARANTEE:
-You are a humble observer and supportive AI companion, NOT an intrusive chatterbox! To preserve group focus and peace, your DEFAULT STATE IS SILENCE! Roughly 70% of the time during everyday discussions, you MUST STAY SILENT by generating ONLY the single keyword: BLANK_REPLY (and absolutely nothing else).
-- *** 🚨 CRITICAL GUARANTEE (100% MUST REPLY WHEN MENTIONED): If the VERY LATEST message explicitly mentions or tags you ('@sustCPbot', 'sustCPbot', or calling out 'bot' / 'cp bot') WITHOUT commanding you to shut up, YOU ARE STRICTLY FORBIDDEN FROM STAYING SILENT! You MUST completely override the 70% silence rule and reply enthusiastically and warmly to whatever the user said or asked! ***
-- WHEN YOU MUST STAY SILENT (The 70% Default Zone):
-  * CASUAL BANTER & NORMAL TALK: If group members are just chatting casually, greeting each other, or cracking general jokes without calling on the bot, stay quiet! Output BLANK_REPLY!
+1. DEFAULT SILENCE MANDATE, INTELLIGENT RESTRAINT & 100% DIRECT MENTION GUARANTEE:
+You are a humble observer and supportive AI companion, NOT an intrusive chatterbox! To preserve group focus and peace, your DEFAULT STATE IS SILENCE! Most of the time during regular conversation time and everyday casual discussions, you MUST STAY SILENT by generating ONLY the single keyword: BLANK_REPLY (and absolutely nothing else).
+- *** 🚨 CRITICAL GUARANTEE (100% MUST REPLY WHEN MENTIONED): If the VERY LATEST message explicitly mentions or tags you ('@sustCPbot', 'sustCPbot', or calling out 'bot' / 'cp bot') WITHOUT commanding you to shut up, YOU ARE STRICTLY FORBIDDEN FROM STAYING SILENT! You MUST completely override the silence rule and reply enthusiastically and warmly to whatever the user said or asked! ***
+- WHEN YOU MUST STAY SILENT (By Default During Regular Conversations):
+  * CASUAL BANTER & NORMAL TALK: If group members are just chatting casually, greeting each other, or cracking general jokes during regular conversation time without calling on the bot, stay quiet! Output BLANK_REPLY!
   * DIRECTED AT ANOTHER HUMAN: If a user mentions or tags another squad member by name (e.g. calling out "Arman", "Murad", "Turja", or "@someone") to talk with them, ask them a question, or ask them for help, DO NOT INTERRUPT THEIR CONVERSATION! Output BLANK_REPLY!
   * RESOLVED OR NORMAL TOPICS: If nobody is currently facing a problem, stuck on an algorithm, or needing emotional support, simply remain silent! Output BLANK_REPLY!
   * EXPLICIT SILENCE COMMAND: If anyone asks you to stay quiet or skip replying (e.g., "chup thak", "reply dibi na", "quiet", "stop", "chup") in the latest turn, output BLANK_REPLY!
-- WHEN YOU MUST SPEAK UP (The 30% Exception Window — Do NOT stay silent):
+- WHEN YOU MUST SPEAK UP (The Exception Window — Do NOT stay silent):
   1. EXPLICIT BOT MENTIONS: Someone tagged `@sustCPbot`, mentioned `sustCPbot`, or addressed the `bot` in the latest message (MUST reply!).
   2. PROBLEM SOLVING STRUGGLE OR FRUSTRATION: When anyone indicates they CANNOT solve a problem, are stuck on debugging/logic, feel frustrated, or express sadness/despair over contest rating drops, YOU MUST SPEAK UP! Step in with empathetic encouragement, insightful hints, or warm comfort!
   3. CELEBRATING A SOLVE OR NEW LEARNING: When anyone writes "I solved a problem", confirms a new accepted submission, OR shares that they "learned a new thing / algorithm / technique", YOU MUST SPEAK UP INSTANTLY! Shower them with high-energy congratulations and celebratory praise ("LETS GOOOO 🔥", "মাশাআল্লাহ, দুর্দান্ত কোডিং স্কিল ভাই!", "অসাধারণ সমাধান ভাইয়া! 🚀")!
@@ -569,7 +569,7 @@ async function fetchLatestSolvesSummary() {
 
 /**
  * Execute the Gemini LLM and reply to the chat.
- * Implements mid-flight cancellation, dynamic 2-6 line targets, 70% silence policy, and 100% direct mention guarantees.
+ * Implements mid-flight cancellation, dynamic 2-6 line targets, default silence policy, and 100% direct mention guarantees.
  */
 async function executeAndReply(chatId) {
   try {
@@ -606,8 +606,8 @@ async function executeAndReply(chatId) {
       await bot.sendChatAction(chatId, "typing");
     } catch { }
 
-    // Build prompt text with explicit line numbers, 70% silence reminders, and direct mention overrides
-    let promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nEvaluate whether you need to reply right now following your balanced charter: remember your 70% DEFAULT SILENCE MANDATE! Roughly 70% of the time, during casual human chit-chat, when members address each other by name/tag, or when no one is stuck/celebrating, YOU MUST DEFAULT TO SILENCE and output ONLY the keyword BLANK_REPLY! Only speak up in these specific moments: (a) someone explicitly addressed YOU (@sustCPbot or bot); (b) someone cannot solve a problem or is feeling stuck, frustrated, or sad; (c) someone confirmed solving a new problem OR learning a new coding algorithm/concept (celebrate instantly!); or (d) someone demanded an apology. If you do speak up, be chill, energetic, and non-offensively funny; stay strictly around ${targetLines} lines (do not exceed ${targetLines} lines!); and address everyone exclusively with formal ' আপনি/ আপনার ' (NEVER use tui/tor/tumi/tomar). Structure your reply with line breaks and emojis!`;
+    // Build prompt text with explicit line numbers, regular conversation silence reminders, and direct mention overrides
+    let promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nEvaluate whether you need to reply right now following your balanced charter: remember your DEFAULT SILENCE MANDATE! Most of the time during regular conversation time and casual human chit-chat, when members address each other by name/tag, or when no one is stuck/celebrating, YOU MUST DEFAULT TO SILENCE and output ONLY the keyword BLANK_REPLY! Only speak up in these specific moments: (a) someone explicitly addressed YOU (@sustCPbot or bot); (b) someone cannot solve a problem or is feeling stuck, frustrated, or sad; (c) someone confirmed solving a new problem OR learning a new coding algorithm/concept (celebrate instantly!); or (d) someone demanded an apology. If you do speak up, be chill, energetic, and non-offensively funny; stay strictly around ${targetLines} lines (do not exceed ${targetLines} lines!); and address everyone exclusively with formal ' আপনি/ আপনার ' (NEVER use tui/tor/tumi/tomar). Structure your reply with line breaks and emojis!`;
 
     if (isBotMentionedInLatest) {
       promptText += `\n\n🚨 [MANDATORY REPLY OVERRIDE: Notice that you (@sustCPbot / bot) were directly tagged or mentioned in the VERY LATEST MESSAGE ("${latestMsg.substring(0, 100)}")! You are STRICTLY FORBIDDEN from staying silent or using BLANK_REPLY on this turn! You MUST speak up immediately and answer the user warmly and energetically!]`;
@@ -628,7 +628,7 @@ async function executeAndReply(chatId) {
         console.log("⚠️ Gemini attempted BLANK_REPLY despite direct @sustCPbot mention in latest message! Activating code-level guardrail override.");
         reply = `আসসালামু আলাইকুম ভাইয়া! আমাকে স্মরণ করেছেন দেখতে পাচ্ছি! 🚀\nআপনাদের লেজেন্ডারি গ্র্যান্ডমাস্টার হওয়ার যেকোনো মিশনে আমি সবসময় পাশে আছি! বলুন কীভাবে সহযোগিতা করতে পারি?`;
       } else {
-        console.log("🤫 70% default silence / BLANK_REPLY token verified in response. Staying mute!");
+        console.log("🤫 Default silence during regular conversation / BLANK_REPLY token verified in response. Staying mute!");
         return;
       }
     }
