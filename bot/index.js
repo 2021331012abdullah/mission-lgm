@@ -698,7 +698,7 @@ async function executeAndReply(chatId, triggerMessageId = null) {
     } else {
       console.log("🕵️ Ambient group discussion! Using default-silence evaluation prompt.");
       dynamicSystemPrompt = getAmbientObservationSystemPrompt(targetLines);
-      promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nEvaluate whether you need to reply right now following your ambient observation rules! Most of the time during regular conversation time and casual human chit-chat, when members address each other by name/tag, or when no one is stuck/celebrating, YOU MUST DEFAULT TO SILENCE and output ONLY the single keyword BLANK_REPLY! Only speak up in these specific ambient moments: (a) someone cannot solve a problem or is feeling stuck, frustrated, or sad; (b) someone confirmed solving a new problem OR learning a new coding algorithm/concept (celebrate instantly!); (c) someone demanded an apology; or (d) someone shared great facts, findings, or experiences. If you do speak up, be chill, energetic, and non-offensively funny; stay strictly around ${targetLines} lines (absolute maximum 6 lines!); and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). Structure your reply with line breaks and emojis!`;
+      promptText = `Here is the active transcript of the last ${buffer.length} messages in the group chat:\n\n${transcript}\n\n---\n[Background Reference Data: Today's Live Codeforces Solve Status]\n${solvesSummary}\n---\n\nEvaluate whether you need to reply right now following your ambient observation rules! Most of the time during regular conversation time and casual human chit-chat, when members address each other by name/tag, YOU MUST DEFAULT TO SILENCE and output ONLY the single keyword BLANK_REPLY! Only speak up in these specific ambient moments: (a) someone cannot solve a problem or is feeling stuck, frustrated, or sad; (b) someone confirmed solving a new problem OR learning a new coding algorithm/concept (celebrate instantly!); (c) someone demanded an apology; or (d) someone shared great facts, findings, or experiences. If you do speak up, be chill, energetic, and non-offensively funny; stay strictly around ${targetLines} lines (absolute maximum 6 lines!); and address everyone exclusively with formal 'আপনি/আপনার' (NEVER use tui/tor/tumi/tomar). Structure your reply with line breaks and emojis!`;
     }
 
     // Call Gemini using our resilient retry & fallback helper
@@ -792,9 +792,9 @@ async function evaluateInstantReaction(chatId, messageId, text, senderName) {
 Message: "${text}"
 
 Task: Determine if this message deserves a Telegram emoji reaction based on these strict rules:
-1. If they solved a hard problem, achieved a goal, or shared a great idea -> output exactly 🔥 or ❤️
-2. If they are sad, frustrated, or had a rating drop -> output exactly 😢
-3. If the message is genuinely funny or a good joke -> output exactly 🤣
+1. If they solved a hard problem, achieved a goal, or shared a great idea -> output exactly 🔥, ❤️, 🤩, 🎉, or 👏
+2. If they are sad, frustrated, or had a rating drop -> output exactly 😢 or 💔
+3. If the message is genuinely funny or a good joke -> output exactly 🤣, 😂, or 😁
 4. If it's just regular conversation, casual talk, or neutral questions -> output exactly BLANK
 
 Output ONLY ONE EMOJI or the word BLANK. Do not output anything else.`;
